@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Brand theme — placeholder neutral palette.
+ * Swap these values (only) once real brand colors are provided.
+ * Category badge colors are functional, not brand-driven — see lib/theme.ts.
+ */
+:root {
+  --color-background: #ffffff;
+  --color-foreground: #171717;
+
+  --color-header-bg: #171717;
+  --color-header-fg: #ffffff;
+
+  --color-accent: #2563eb;
+  --color-accent-fg: #ffffff;
+}
+
+body {
+  color: var(--color-foreground);
+  background: var(--color-background);
+}
