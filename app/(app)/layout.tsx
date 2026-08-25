@@ -1,13 +1,16 @@
 import TopNav from "@/components/TopNav";
+import { getCurrentTeamMember } from "@/lib/auth";
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const teamMember = await getCurrentTeamMember();
+
   return (
     <div className="min-h-screen bg-background">
-      <TopNav />
+      <TopNav isAdmin={teamMember?.role === "Admin"} />
       {children}
     </div>
   );

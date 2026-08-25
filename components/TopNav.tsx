@@ -2,23 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CATEGORY_SLUGS, categoryLabel } from "@/lib/categories";
+import { BRANCH_SLUGS, branchLabel } from "@/lib/branches";
 
-const TABS = [
-  { label: "Dashboard", href: "/dashboard" },
-  ...CATEGORY_SLUGS.map((slug) => ({
-    label: categoryLabel(slug),
-    href: `/clients/${slug}`,
-  })),
-];
-
-export default function TopNav() {
+export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
+
+  const tabs = [
+    { label: "Dashboard", href: "/dashboard" },
+    ...BRANCH_SLUGS.map((slug) => ({
+      label: branchLabel(slug),
+      href: `/projects/${slug}`,
+    })),
+    { label: "Leads", href: "/leads" },
+    { label: "Contacts", href: "/contacts" },
+    ...(isAdmin ? [{ label: "Transactions", href: "/transactions" }] : []),
+  ];
 
   return (
     <nav className="bg-header">
-      <div className="mx-auto flex max-w-6xl items-center gap-1 px-4">
-        {TABS.map((tab) => {
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-1 px-4">
+        {tabs.map((tab) => {
           const isActive =
             tab.href === "/dashboard"
               ? pathname === "/dashboard"
