@@ -4,6 +4,8 @@
 
 export type Category = "Media" | "Websites" | "Marketplace" | "AI";
 
+export const CATEGORIES: Category[] = ["Media", "Websites", "Marketplace", "AI"];
+
 export const CATEGORY_COLORS: Record<Category, string> = {
   Media: "bg-blue-100 text-blue-800 border border-blue-300",
   Websites: "bg-yellow-100 text-yellow-800 border border-yellow-300",

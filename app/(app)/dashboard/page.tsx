@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="p-8">
       <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
       <p className="mt-2 text-neutral-600">Signed in as {user?.email}</p>
 
