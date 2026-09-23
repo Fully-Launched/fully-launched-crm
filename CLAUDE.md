@@ -34,7 +34,8 @@ Live tables: `projects`, `team_members`, `project_tasks`, `transactions`, `leads
 - **Owner** — `uuid[]` array of team_member ids; already multi-value. (`project_tasks.owner` is a single `uuid` — intentional.)
 - **Transactions** — Admin-only, RLS-gated
 - **Leads**, **Contacts** — built
-- **Dashboard** (`app/(app)/dashboard/page.tsx`, `components/dashboard/`, `lib/dashboard.ts`, `lib/theme.ts`) — **built but not yet committed.** Commit this before doing anything else; the doc previously said "not yet built," which was wrong the moment this code landed in the working tree.
+- **Dashboard** (`app/(app)/dashboard/page.tsx`, `components/dashboard/`, `lib/dashboard.ts`, `lib/theme.ts`) — built and committed.
+- **Kanban** (`/projects/[branch]?view=kanban`, `components/kanban/`) — built: dnd-kit stage columns sorted by `updated_at` desc, Duplicate, + New Project. Detail page back link reads `?from=`/`?tab=` (`lib/projects.ts`).
 
 ### `projects` fields
 
@@ -194,11 +195,8 @@ Not wired up yet. API keys server-side only, from env vars, never hardcoded.
 
 ## Current punch list (priority order)
 
-1. Commit the uncommitted dashboard work
-2. Kanban view (dnd-kit, updated_at sort, Duplicate button)
-3. "+ Add Team Member" screen (three-role picker)
-4. Load real client data — get Luke's actual client list first, don't invent sample data (all tables are currently empty)
-5. Table view overflow-hidden audit on multi-select columns
-6. Detail page back-button audit (do this once Kanban exists — that's what actually breaks it)
-7. Cal.com integration
-8. Stripe: connect invoice buttons
+1. "+ Add Team Member" screen (three-role picker)
+2. Load real client data — get Luke's actual client list first, don't invent sample data (all tables are currently empty)
+3. Table view overflow-hidden audit on multi-select columns
+4. Cal.com integration
+5. Stripe: connect invoice buttons
