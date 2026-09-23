@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Project, ProjectTask, TeamMember } from "@/lib/types";
+import { duplicateProjectPayload } from "@/lib/projects";
 import {
   BRANCHES,
   BRANCH_COLORS,
@@ -71,11 +72,13 @@ export default function ProjectDetail({
 }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [project, setProject] = useState<Project>(initialProject);
   const [error, setError] = useState<string | null>(null);
   const [invoiceNotice, setInvoiceNotice] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
 
   async function update(patch: Partial<Project>) {
     const previous = project;
@@ -108,6 +111,26 @@ export default function ProjectDetail({
       return;
     }
     router.push(back.href);
+    router.refresh();
+  }
+
+  // Opens the copy rather than returning to the list — the user most likely
+  // wants to edit it next. Carries this page's ?from=/?tab= over so the
+  // copy's back link still returns to the original view.
+  async function duplicateProject() {
+    setDuplicating(true);
+    const { data, error } = await supabase
+      .from("projects")
+      .insert(duplicateProjectPayload(project))
+      .select("id")
+      .single();
+    if (error || !data) {
+      setDuplicating(false);
+      setError(error?.message ?? "Could not duplicate project");
+      return;
+    }
+    const query = searchParams.toString();
+    router.push(`/project/${data.id}${query ? `?${query}` : ""}`);
     router.refresh();
   }
 
@@ -144,16 +167,26 @@ export default function ProjectDetail({
           colors={STAGE_COLORS}
           onCommit={(v) => update({ stage: v as Stage })}
         />
-        {canDelete && (
+        <div className="ml-auto flex gap-2">
           <button
             type="button"
-            onClick={() => setConfirmingDelete(true)}
-            disabled={deleting}
-            className="ml-auto rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+            onClick={duplicateProject}
+            disabled={duplicating || deleting}
+            className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
           >
-            {deleting ? "Deleting…" : "Delete project"}
+            {duplicating ? "Duplicating…" : "Duplicate project"}
           </button>
-        )}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(true)}
+              disabled={deleting || duplicating}
+              className="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+            >
+              {deleting ? "Deleting…" : "Delete project"}
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (

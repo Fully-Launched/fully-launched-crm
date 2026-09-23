@@ -21,7 +21,7 @@ function CardBody({
   const overdue = isOverdue(project);
   return (
     <>
-      <p className="pr-16 font-semibold text-foreground">
+      <p className="font-semibold text-foreground">
         {project.client_name}
       </p>
 
@@ -68,13 +68,11 @@ export default function KanbanCard({
   project,
   ownerNames,
   href,
-  onDuplicate,
   isClickSuppressed,
 }: {
   project: Project;
   ownerNames: string[];
   href: string;
-  onDuplicate: () => void;
   isClickSuppressed: () => boolean;
 }) {
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
@@ -90,9 +88,8 @@ export default function KanbanCard({
         isDragging ? "opacity-40" : ""
       }`}
     >
-      {/* Stretched link: its ::after covers the whole card so a click
-          anywhere opens the detail page, while the Duplicate button sits
-          above it (z-10) and stays independently clickable. */}
+      {/* Stretched link: covers the whole card so a click anywhere opens
+          the detail page. */}
       <Link
         href={href}
         draggable={false}
@@ -102,15 +99,6 @@ export default function KanbanCard({
         className="absolute inset-0 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
         aria-label={`Open ${project.client_name}`}
       />
-      <button
-        type="button"
-        onPointerDown={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-        onClick={onDuplicate}
-        className="absolute right-2 top-2 z-10 rounded-md px-1.5 py-0.5 text-xs font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800"
-      >
-        Duplicate
-      </button>
       <CardBody project={project} ownerNames={ownerNames} />
     </div>
   );

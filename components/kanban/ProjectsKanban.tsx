@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import { STAGES, type Stage } from "@/lib/theme";
 import type { Project, TeamMember } from "@/lib/types";
 import { branchValue, type BranchSlug } from "@/lib/branches";
-import { duplicateProjectPayload, projectDetailHref } from "@/lib/projects";
+import { projectDetailHref } from "@/lib/projects";
 import KanbanColumn from "@/components/kanban/KanbanColumn";
 import KanbanCard, { KanbanCardPreview } from "@/components/kanban/KanbanCard";
 
@@ -146,21 +146,6 @@ export default function ProjectsKanban({
     setProjects((prev) => [data as Project, ...prev]);
   }
 
-  async function duplicate(project: Project) {
-    const { data, error } = await supabase
-      .from("projects")
-      .insert(duplicateProjectPayload(project))
-      .select()
-      .single();
-
-    if (error || !data) {
-      setError(error?.message ?? "Could not duplicate project");
-      return;
-    }
-    setError(null);
-    setProjects((prev) => [data as Project, ...prev]);
-  }
-
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
@@ -199,7 +184,6 @@ export default function ProjectsKanban({
                     project={p}
                     ownerNames={ownerNames(p)}
                     href={projectDetailHref(p.id, "kanban", tab)}
-                    onDuplicate={() => duplicate(p)}
                     isClickSuppressed={() => draggingRef.current}
                   />
                 ))}

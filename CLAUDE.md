@@ -35,7 +35,7 @@ Live tables: `projects`, `team_members`, `project_tasks`, `transactions`, `leads
 - **Transactions** — Admin-only, RLS-gated
 - **Leads**, **Contacts** — built
 - **Dashboard** (`app/(app)/dashboard/page.tsx`, `components/dashboard/`, `lib/dashboard.ts`, `lib/theme.ts`) — built and committed.
-- **Kanban** (`/projects/[branch]?view=kanban`, `components/kanban/`) — built: dnd-kit stage columns sorted by `updated_at` desc, Duplicate, + New Project. Detail page back link reads `?from=`/`?tab=` (`lib/projects.ts`).
+- **Kanban** (`/projects/[branch]?view=kanban`, `components/kanban/`) — built: dnd-kit stage columns sorted by `updated_at` desc, + New Project. Detail page back link reads `?from=`/`?tab=` (`lib/projects.ts`).
 
 ### `projects` fields
 
@@ -140,6 +140,8 @@ Deleting a project is **Admin-only**, enforced by the `admin delete` RLS policy 
 
 `/project/[id]` — Build and Subscription sections, project tasks, Admin-only Delete. Live.
 
+**Duplicate project** (any authenticated user): inserts `duplicateProjectPayload()` (`lib/projects.ts`) — same stage, "(Copy)" appended to `client_name`, no id/timestamps/`scheduled_call`/Stripe fields. Tasks and transactions aren't copied. On success it opens the copy's detail page, carrying over `?from=`/`?tab=` so the back link still returns to the original view.
+
 ## Leads tab
 
 Placeholder for Matteo's AI Lead Finder, backed by the `leads` table. Each row has an **"Add to Project"** button that creates a new `projects` row (Stage defaults to Leads, `source` carried over if it matches the fixed source list) and sends the user to that project's Manage Project page to fill in the rest. No live AI Lead Finder integration yet — rows are added manually.
@@ -160,7 +162,7 @@ If Target Date is in the past and Stage is **not** Complete, Subscriber, or Lost
 
 (From a prior CRM build's lessons — apply proactively, not as after-the-fact fixes.)
 
-- **Kanban**: `@dnd-kit/core` for drag between Stage columns. Sort cards within each column by `updated_at` descending from the first version — don't ship unsorted. Respect Branch tab filtering. Add a Duplicate button on cards, copies the project into the same stage with "(Copy)" appended to the name.
+- **Kanban**: `@dnd-kit/core` for drag between Stage columns. Sort cards within each column by `updated_at` descending from the first version — don't ship unsorted. Respect Branch tab filtering. Duplicate lives on the Manage Project page, not on cards (see Manage Project page section).
 - **Detail page back button**: track origin view/tab via query param (`?from=table&tab=websites`), not `router.back()` alone — it breaks after client-side view-state changes.
 - **Table view resizable columns**: scope `overflow-hidden` truncation to text/select/date cells only — applying it to multi-select cells (Branch, Owner) clips the checkbox popover.
 - **Multi-value fields**: array columns from day one, not retrofitted.
