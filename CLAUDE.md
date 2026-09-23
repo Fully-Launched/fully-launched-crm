@@ -82,8 +82,6 @@ The `build`/`subscription` conditional fields live on the Manage Project page as
 | notes | text |
 | created_at | timestamptz, default now() |
 
-Migration 002 originally created this FK as `ON DELETE CASCADE`; `supabase/migrations/003_transactions_survive_project_delete.sql` changes it to `ON DELETE SET NULL`. Migration 003 is committed but **not yet applied to the live database** (as of 2026-09-22) — until it's run in the Supabase SQL Editor, deleting a project still deletes its transactions. Verify after applying: `select confdeltype from pg_constraint where conname = 'transactions_project_id_fkey';` → `n`.
-
 ### `leads` fields
 
 | Field | Type / Notes |
