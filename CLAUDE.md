@@ -160,7 +160,7 @@ If Target Date is in the past and Stage is **not** Complete, Subscriber, or Lost
 
 ## Domain
 
-`crm.fullylaunched.com` via CNAME. No paid Vercel Team needed for a custom domain (that's only for removing the personal-account slug from the default `*.vercel.app` URL).
+**Live:** `crm.fullylaunched.com` via CNAME, verified on Vercel. No paid Vercel Team needed for a custom domain (that's only for removing the personal-account slug from the default `*.vercel.app` URL).
 
 ## Cal.com plan
 
@@ -199,7 +199,6 @@ Not wired up yet. API keys server-side only, from env vars, never hardcoded.
 3. "+ Add Team Member" screen (three-role picker)
 4. Load real client data — get Luke's actual client list first, don't invent sample data (all tables are currently empty)
 5. Table view overflow-hidden audit on multi-select columns
-6. Domain: CNAME crm.fullylaunched.com
-7. Detail page back-button audit (do this once Kanban exists — that's what actually breaks it)
-8. Cal.com integration
-9. Stripe: connect invoice buttons
+6. Detail page back-button audit (do this once Kanban exists — that's what actually breaks it)
+7. Cal.com integration
+8. Stripe: connect invoice buttons
