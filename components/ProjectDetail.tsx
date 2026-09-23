@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Project, ProjectTask, TeamMember } from "@/lib/types";
 import {
@@ -20,6 +21,7 @@ import DateCell from "@/components/table/DateCell";
 import BadgeSelectCell from "@/components/table/BadgeSelectCell";
 import MultiSelectCell from "@/components/table/MultiSelectCell";
 import ProjectTasksManager from "@/components/ProjectTasksManager";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const currencyFormat = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -59,16 +61,21 @@ export default function ProjectDetail({
   teamMembers,
   initialTasks,
   back,
+  canDelete,
 }: {
   initialProject: Project;
   teamMembers: TeamMember[];
   initialTasks: ProjectTask[];
   back: { href: string; label: string };
+  canDelete: boolean;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const [project, setProject] = useState<Project>(initialProject);
   const [error, setError] = useState<string | null>(null);
   const [invoiceNotice, setInvoiceNotice] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function update(patch: Partial<Project>) {
     const previous = project;
@@ -83,6 +90,25 @@ export default function ProjectDetail({
     } else {
       setError(null);
     }
+  }
+
+  // Not optimistic: leaving the page is the success signal. A delete blocked
+  // by RLS returns no error, just zero rows, so check the returned rows too.
+  async function deleteProject() {
+    setConfirmingDelete(false);
+    setDeleting(true);
+    const { data, error } = await supabase
+      .from("projects")
+      .delete()
+      .eq("id", project.id)
+      .select("id");
+    if (error || !data?.length) {
+      setDeleting(false);
+      setError(error?.message ?? "You don't have permission to delete this project.");
+      return;
+    }
+    router.push(back.href);
+    router.refresh();
   }
 
   const depositCleared =
@@ -118,6 +144,16 @@ export default function ProjectDetail({
           colors={STAGE_COLORS}
           onCommit={(v) => update({ stage: v as Stage })}
         />
+        {canDelete && (
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            disabled={deleting}
+            className="ml-auto rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            {deleting ? "Deleting…" : "Delete project"}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -305,6 +341,15 @@ export default function ProjectDetail({
           initialTasks={initialTasks}
         />
       </div>
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        title={`Delete ${project.client_name}? This can't be undone. Its tasks will be deleted too. Transactions and contact history will be kept but unlinked from this project.`}
+        confirmLabel="Delete"
+        tone="danger"
+        onCancel={() => setConfirmingDelete(false)}
+        onConfirm={deleteProject}
+      />
     </div>
   );
 }

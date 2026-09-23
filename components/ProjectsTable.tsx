@@ -18,7 +18,6 @@ import TextCell from "@/components/table/TextCell";
 import DateCell from "@/components/table/DateCell";
 import BadgeSelectCell from "@/components/table/BadgeSelectCell";
 import MultiSelectCell from "@/components/table/MultiSelectCell";
-import ConfirmDialog from "@/components/ConfirmDialog";
 import { branchSlug } from "@/lib/branches";
 import { projectDetailHref } from "@/lib/projects";
 
@@ -74,7 +73,6 @@ export default function ProjectsTable({
   const supabase = useMemo(() => createClient(), []);
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [error, setError] = useState<string | null>(null);
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [sort, setSort] = useState<{ column: string; dir: SortDir } | null>(
     null
   );
@@ -141,19 +139,6 @@ export default function ProjectsTable({
     }
     setError(null);
     setProjects((prev) => [data as Project, ...prev]);
-  }
-
-  async function deleteProject(id: string) {
-    const previous = projects;
-    setProjects((prev) => prev.filter((p) => p.id !== id));
-    const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (error) {
-      setProjects(previous);
-      setError(error.message);
-    } else {
-      setError(null);
-    }
-    setPendingDeleteId(null);
   }
 
   const columns: Column[] = useMemo(
@@ -427,21 +412,6 @@ export default function ProjectsTable({
           </Link>
         ),
       },
-      {
-        id: "delete",
-        label: "",
-        getSortValue: () => 0,
-        matchesFilter: () => true,
-        render: (p) => (
-          <button
-            type="button"
-            onClick={() => setPendingDeleteId(p.id)}
-            className="rounded-md px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
-          >
-            Delete
-          </button>
-        ),
-      },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [teamMembers, memberOptions, fixedBranch]
@@ -545,14 +515,6 @@ export default function ProjectsTable({
           </tbody>
         </table>
       </div>
-
-      <ConfirmDialog
-        open={pendingDeleteId !== null}
-        title="Delete this project? This can't be undone."
-        confirmLabel="Delete"
-        onCancel={() => setPendingDeleteId(null)}
-        onConfirm={() => pendingDeleteId && deleteProject(pendingDeleteId)}
-      />
     </div>
   );
 }
