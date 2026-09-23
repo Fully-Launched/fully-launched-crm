@@ -2,11 +2,14 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Project, ProjectTask, TeamMember } from "@/lib/types";
 import ProjectDetail from "@/components/ProjectDetail";
+import { projectOrigin } from "@/lib/projects";
 
 export default async function ProjectDetailPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams: { from?: string; tab?: string };
 }) {
   const supabase = createClient();
 
@@ -31,6 +34,7 @@ export default async function ProjectDetailPage({
         initialProject={project as Project}
         teamMembers={(teamMembers ?? []) as TeamMember[]}
         initialTasks={(tasks ?? []) as ProjectTask[]}
+        back={projectOrigin(searchParams.from, searchParams.tab)}
       />
     </div>
   );

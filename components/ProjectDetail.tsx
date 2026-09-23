@@ -58,10 +58,12 @@ export default function ProjectDetail({
   initialProject,
   teamMembers,
   initialTasks,
+  back,
 }: {
   initialProject: Project;
   teamMembers: TeamMember[];
   initialTasks: ProjectTask[];
+  back: { href: string; label: string };
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [project, setProject] = useState<Project>(initialProject);
@@ -96,8 +98,8 @@ export default function ProjectDetail({
 
   return (
     <div>
-      <Link href="/projects/all" className="text-sm text-accent hover:underline">
-        ← Back to Projects
+      <Link href={back.href} className="text-sm text-accent hover:underline">
+        ← {back.label}
       </Link>
 
       <div className="mt-2 flex flex-wrap items-center gap-3">

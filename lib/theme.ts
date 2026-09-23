@@ -35,6 +35,10 @@ export type Stage =
   | "Subscriber"
   | "Lost";
 
+// Order mirrors the `projects_stage_check` constraint in
+// supabase/migrations/002_projects_transactions_roles.sql, which is the
+// source of truth. Kanban columns, the Table's stage sort, and the dashboard
+// all follow this order — if the constraint changes, update this list too.
 export const STAGES: Stage[] = [
   "Leads",
   "Interested",

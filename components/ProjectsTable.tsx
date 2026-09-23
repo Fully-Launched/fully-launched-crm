@@ -19,6 +19,8 @@ import DateCell from "@/components/table/DateCell";
 import BadgeSelectCell from "@/components/table/BadgeSelectCell";
 import MultiSelectCell from "@/components/table/MultiSelectCell";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { branchSlug } from "@/lib/branches";
+import { projectDetailHref } from "@/lib/projects";
 
 type SortDir = "asc" | "desc";
 
@@ -414,7 +416,11 @@ export default function ProjectsTable({
         matchesFilter: () => true,
         render: (p) => (
           <Link
-            href={`/project/${p.id}`}
+            href={projectDetailHref(
+              p.id,
+              "table",
+              fixedBranch ? branchSlug(fixedBranch) : "all"
+            )}
             className="whitespace-nowrap rounded-md border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
           >
             Manage Project
@@ -438,7 +444,7 @@ export default function ProjectsTable({
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [teamMembers, memberOptions]
+    [teamMembers, memberOptions, fixedBranch]
   );
 
   const rows = useMemo(() => {
