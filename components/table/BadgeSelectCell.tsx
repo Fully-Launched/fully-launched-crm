@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useClickOutside } from "@/lib/hooks/useClickOutside";
+import Popover from "@/components/table/Popover";
 
 export default function BadgeSelectCell({
   value,
@@ -18,10 +18,9 @@ export default function BadgeSelectCell({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  useClickOutside(ref, () => setOpen(false));
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -40,27 +39,30 @@ export default function BadgeSelectCell({
         )}
       </button>
 
-      {open && (
-        <div className="absolute left-0 top-full z-20 mt-1 w-40 rounded-md border border-neutral-200 bg-white p-1 shadow-lg">
-          {options.map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => {
-                onCommit(opt);
-                setOpen(false);
-              }}
-              className="flex w-full items-center rounded px-2 py-1 text-left hover:bg-neutral-50"
+      <Popover
+        anchorRef={ref}
+        open={open}
+        onClose={() => setOpen(false)}
+        className="w-40 p-1"
+      >
+        {options.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => {
+              onCommit(opt);
+              setOpen(false);
+            }}
+            className="flex w-full items-center rounded px-2 py-1 text-left hover:bg-neutral-50"
+          >
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${colors[opt]}`}
             >
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${colors[opt]}`}
-              >
-                {opt}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
+              {opt}
+            </span>
+          </button>
+        ))}
+      </Popover>
     </div>
   );
 }

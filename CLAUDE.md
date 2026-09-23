@@ -164,7 +164,7 @@ If Target Date is in the past and Stage is **not** Complete, Subscriber, or Lost
 
 - **Kanban**: `@dnd-kit/core` for drag between Stage columns. Sort cards within each column by `updated_at` descending from the first version — don't ship unsorted. Respect Branch tab filtering. Duplicate lives on the Manage Project page, not on cards (see Manage Project page section).
 - **Detail page back button**: track origin view/tab via query param (`?from=table&tab=websites`), not `router.back()` alone — it breaks after client-side view-state changes.
-- **Table view resizable columns**: scope `overflow-hidden` truncation to text/select/date cells only — applying it to multi-select cells (Branch, Owner) clips the checkbox popover.
+- **Dropdowns inside scroll containers**: the Table view's `overflow-x-auto` wrapper also clips vertically (CSS forces the other axis to `auto`), so absolutely-positioned menus get cut off. Cell and filter dropdowns (`MultiSelectCell`, `BadgeSelectCell`, `ColumnHeader`) render through `components/table/Popover.tsx` — a portal to `document.body`, `position: fixed` from the trigger's rect, flips above when there's no room below. Use it for any new dropdown.
 - **Multi-value fields**: array columns from day one, not retrofitted.
 - Favicon changes are aggressively cached — test in incognito.
 - Vercel Deployment Protection stays off (Settings → Deployment Protection → Disabled).
@@ -206,8 +206,7 @@ Not wired up yet. API keys server-side only, from env vars, never hardcoded.
 
 ## Current punch list (priority order)
 
-1. "+ Add Team Member" screen (three-role picker)
+1. ~~"+ Add Team Member" screen (three-role picker)~~ — done, shipped in 247e927
 2. Load real client data — get Luke's actual client list first, don't invent sample data (all tables are currently empty)
-3. Table view overflow-hidden audit on multi-select columns
-4. Cal.com integration
-5. Stripe: connect invoice buttons
+3. Cal.com integration
+4. Stripe: connect invoice buttons
