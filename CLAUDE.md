@@ -74,7 +74,7 @@ The `build`/`subscription` conditional fields live on the Manage Project page as
 | Field | Type / Notes |
 |---|---|
 | id | uuid, primary key |
-| project_id | uuid, nullable, fk → projects — **`ON DELETE CASCADE`** in the live migration |
+| project_id | uuid, nullable, fk → projects — `ON DELETE SET NULL` (migration 003), so transactions survive project deletion, same pattern as `contacts.project_id` |
 | amount | numeric, not null |
 | date | date, not null, default today |
 | payer | text (free text) |
@@ -82,7 +82,7 @@ The `build`/`subscription` conditional fields live on the Manage Project page as
 | notes | text |
 | created_at | timestamptz, default now() |
 
-⚠ **Unresolved:** the original spec said transactions should *survive* project deletion, but the migration uses `ON DELETE CASCADE`, so deleting a project currently deletes its transactions. Decide which is intended; if "survive," fix via a new migration changing the FK to `ON DELETE SET NULL`.
+Migration 002 originally created this FK as `ON DELETE CASCADE`; `supabase/migrations/003_transactions_survive_project_delete.sql` changes it to `ON DELETE SET NULL`. Migration 003 is committed but **not yet applied to the live database** (as of 2026-09-22) — until it's run in the Supabase SQL Editor, deleting a project still deletes its transactions. Verify after applying: `select confdeltype from pg_constraint where conname = 'transactions_project_id_fkey';` → `n`.
 
 ### `leads` fields
 
