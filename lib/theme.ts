@@ -13,6 +13,17 @@ export const BRANCH_COLORS: Record<Branch, string> = {
   AI: "bg-green-100 text-green-800 border border-green-300",
 };
 
+// Hex equivalents of BRANCH_COLORS for chart fills (recharts can't consume
+// Tailwind classes). Same fixed hues, just a different format. Red/AI-green
+// stay close for deuteranopia at any shade — the branch chart always pairs
+// these with a direct text label, never color alone.
+export const BRANCH_CHART_COLORS: Record<Branch, string> = {
+  Media: "#2563eb",
+  Websites: "#ca8a04",
+  Marketplace: "#dc2626",
+  AI: "#16a34a",
+};
+
 // Stage isn't given fixed colors in the spec (unlike Branch) — this is a
 // placeholder sequential palette, swappable here in one place.
 export type Stage =
@@ -42,6 +53,20 @@ export const STAGE_COLORS: Record<Stage, string> = {
   Complete: "bg-emerald-100 text-emerald-800 border border-emerald-300",
   Subscriber: "bg-teal-100 text-teal-800 border border-teal-300",
   Lost: "bg-rose-100 text-rose-800 border border-rose-300",
+};
+
+// Hex equivalents of STAGE_COLORS for chart fills. Same hue family as the
+// badges above; the stage chart always keeps its x-axis category labels on
+// so identity never depends on color alone (Complete/Subscriber sit close
+// together for full-color viewers too).
+export const STAGE_CHART_COLORS: Record<Stage, string> = {
+  Leads: "#737373",
+  Interested: "#0ea5e9",
+  Signed: "#8b5cf6",
+  "In Progress": "#f59e0b",
+  Complete: "#10b981",
+  Subscriber: "#0d9488",
+  Lost: "#f43f5e",
 };
 
 // Stages that no longer count as "active" for overdue-date highlighting.
