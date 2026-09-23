@@ -14,7 +14,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { STAGES, type Stage } from "@/lib/theme";
 import type { Project, TeamMember } from "@/lib/types";
-import type { BranchSlug } from "@/lib/branches";
+import { branchValue, type BranchSlug } from "@/lib/branches";
 import { duplicateProjectPayload, projectDetailHref } from "@/lib/projects";
 import KanbanColumn from "@/components/kanban/KanbanColumn";
 import KanbanCard, { KanbanCardPreview } from "@/components/kanban/KanbanCard";
@@ -125,6 +125,27 @@ export default function ProjectsKanban({
     );
   }
 
+  // Same insert as the Table's "+ New Project": a blank Leads project in the
+  // current tab's branch (none on the All tab).
+  async function addProject() {
+    const { data, error } = await supabase
+      .from("projects")
+      .insert({
+        client_name: "New Project",
+        branch: branchValue(tab),
+        stage: "Leads",
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      setError(error?.message ?? "Could not create project");
+      return;
+    }
+    setError(null);
+    setProjects((prev) => [data as Project, ...prev]);
+  }
+
   async function duplicate(project: Project) {
     const { data, error } = await supabase
       .from("projects")
@@ -142,9 +163,18 @@ export default function ProjectsKanban({
 
   return (
     <div>
-      <p className="mb-3 text-sm text-neutral-500">
-        {projects.length} project{projects.length === 1 ? "" : "s"}
-      </p>
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-sm text-neutral-500">
+          {projects.length} project{projects.length === 1 ? "" : "s"}
+        </p>
+        <button
+          type="button"
+          onClick={addProject}
+          className="rounded-md bg-header px-3 py-1.5 text-sm font-medium text-header-foreground"
+        >
+          + New Project
+        </button>
+      </div>
 
       {error && (
         <p className="mb-3 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
