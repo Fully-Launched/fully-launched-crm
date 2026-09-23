@@ -56,9 +56,11 @@ export function projectOrigin(
   tab: string | undefined
 ): { href: string; label: string } {
   const slug: BranchSlug = tab && isBranchSlug(tab) ? tab : "all";
-  const kanban = from === "kanban";
+  // Kanban is the default view, so anything other than an explicit
+  // from=table (including no param, e.g. arriving from Leads) goes to Kanban.
+  const table = from === "table";
   return {
-    href: `/projects/${slug}${kanban ? "?view=kanban" : ""}`,
-    label: `Back to ${branchLabel(slug)} (${kanban ? "Kanban" : "Table"})`,
+    href: `/projects/${slug}${table ? "?view=table" : ""}`,
+    label: `Back to ${branchLabel(slug)} (${table ? "Table" : "Kanban"})`,
   };
 }

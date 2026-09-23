@@ -26,7 +26,8 @@ export default async function ProjectsPage({
   const slug = params.branch as BranchSlug;
   const label = branchLabel(slug);
   const branch = branchValue(slug);
-  const view = searchParams.view === "kanban" ? "kanban" : "table";
+  // Kanban is the default; Table is opt-in via ?view=table
+  const view = searchParams.view === "table" ? "table" : "kanban";
 
   const supabase = createClient();
 

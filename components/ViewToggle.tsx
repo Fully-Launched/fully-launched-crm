@@ -19,7 +19,7 @@ export default function ViewToggle({
       {VIEWS.map(({ view, label }) => (
         <Link
           key={view}
-          href={view === "kanban" ? `/projects/${tab}?view=kanban` : `/projects/${tab}`}
+          href={view === "table" ? `/projects/${tab}?view=table` : `/projects/${tab}`}
           aria-current={view === current ? "page" : undefined}
           className={`rounded px-3 py-1 font-medium ${
             view === current
