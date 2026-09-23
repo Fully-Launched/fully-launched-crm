@@ -83,7 +83,8 @@ export type Source =
   | "Instagram"
   | "Facebook"
   | "Website"
-  | "Referral";
+  | "Referral"
+  | "Relationship";
 
 export const SOURCES: Source[] = [
   "Cold Call",
@@ -93,6 +94,7 @@ export const SOURCES: Source[] = [
   "Facebook",
   "Website",
   "Referral",
+  "Relationship",
 ];
 
 export type PaymentStatus =
