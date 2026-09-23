@@ -112,4 +112,6 @@ export const PAYMENT_STATUSES: PaymentStatus[] = [
 
 export type Role = "Admin" | "Manager" | "Salesperson";
 
+// Mirrors the `team_members_role_check` constraint (migration 002), which is
+// the source of truth — if the constraint changes, update this list too.
 export const ROLES: Role[] = ["Admin", "Manager", "Salesperson"];

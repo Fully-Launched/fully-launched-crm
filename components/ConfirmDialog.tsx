@@ -4,12 +4,15 @@ export default function ConfirmDialog({
   open,
   title,
   confirmLabel = "Confirm",
+  tone = "danger",
   onConfirm,
   onCancel,
 }: {
   open: boolean;
   title: string;
   confirmLabel?: string;
+  // "danger" (red) for destructive actions like Delete; "default" otherwise
+  tone?: "danger" | "default";
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -30,7 +33,11 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+              tone === "danger"
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-header text-header-foreground"
+            }`}
           >
             {confirmLabel}
           </button>

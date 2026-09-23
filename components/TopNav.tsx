@@ -15,7 +15,12 @@ export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
     })),
     { label: "Leads", href: "/leads" },
     { label: "Contacts", href: "/contacts" },
-    ...(isAdmin ? [{ label: "Transactions", href: "/transactions" }] : []),
+    ...(isAdmin
+      ? [
+          { label: "Transactions", href: "/transactions" },
+          { label: "Team", href: "/team" },
+        ]
+      : []),
   ];
 
   return (
