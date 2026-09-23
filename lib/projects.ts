@@ -56,9 +56,9 @@ export function projectOrigin(
   tab: string | undefined
 ): { href: string; label: string } {
   const slug: BranchSlug = tab && isBranchSlug(tab) ? tab : "all";
-  const view = from === "kanban" ? "?view=kanban" : "";
+  const kanban = from === "kanban";
   return {
-    href: `/projects/${slug}${view}`,
-    label: `Back to ${branchLabel(slug)}${from === "kanban" ? " (Kanban)" : ""}`,
+    href: `/projects/${slug}${kanban ? "?view=kanban" : ""}`,
+    label: `Back to ${branchLabel(slug)} (${kanban ? "Kanban" : "Table"})`,
   };
 }
