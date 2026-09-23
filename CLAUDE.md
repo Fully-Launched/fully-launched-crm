@@ -104,7 +104,7 @@ Visible/editable to all authenticated users (not role-gated).
 
 Three-tier: Admin / Manager / Salesperson.
 
-- Role checks apply only to Transactions, team_members writes (migration 005), and project deletion (migration 006).
+- Role checks apply only to Transactions, team_members writes (migration 005), and project deletion (Admin or Manager, migration 007).
 - Never hardcode team member names — roster is data-driven.
 - Salesperson role-gating (e.g. Talon: no Transactions access) is implemented via RLS but **not verified end-to-end**. Deferred to a dedicated pass, not bundled into unrelated feature work.
 - "+ Add Team Member" UI: role selector across the three roles, roster editable via the app, not hardcoded. New members must be given a role when added; there's no meaningful default.
@@ -127,18 +127,18 @@ Each needs a Supabase login account (Add User, manual) before the app is handoff
 
 Unlike most tables (blanket "authenticated = full access"), `transactions` select/insert/update/delete is restricted by the `admin only access` policy to sessions where `auth.jwt() ->> 'email'` matches a `team_members.email` row with `role = 'Admin'`. Direct API access is blocked for non-Admins even if the frontend check is bypassed. Frontend also hides the tab and `/transactions` redirects non-Admins to `/dashboard` server-side (belt-and-suspenders, not the real gate).
 
-### Project delete (migration 006)
+### Project delete (migrations 006, 007)
 
-Deleting a project is **Admin-only**, enforced by the `admin delete` RLS policy on `projects` (`using (public.is_admin())`). Select/insert/update on `projects` stay open to all authenticated users. Migration 006 is applied to the live database.
+Deleting a project is limited to **Admin or Manager**, enforced by the `admin or manager delete` RLS policy on `projects` (`using (public.is_admin_or_manager())`, migration 007 — replaced 006's Admin-only `admin delete`). Select/insert/update on `projects` stay open to all authenticated users. Salespeople can't delete.
 
-- The only Delete button is on the Manage Project page (`/project/[id]`); the Table view's per-row Delete was removed. Non-Admins don't see the button (UI only — RLS is the real gate).
+- The only Delete button is on the Manage Project page (`/project/[id]`); the Table view's per-row Delete was removed. Salespeople don't see the button (UI only — RLS is the real gate).
 - What deleting a project does: `project_tasks` **cascade** (deleted with it); `transactions` and `contacts` survive with `project_id` set to null.
 - An RLS-blocked delete returns no error, just zero rows — delete calls must use `.select()` and check the returned rows.
 - On success the page redirects to the `?from=`/`?tab=` origin (`projectOrigin` in `lib/projects.ts`).
 
 ## Manage Project page
 
-`/project/[id]` — Build and Subscription sections, project tasks, Admin-only Delete. Live.
+`/project/[id]` — Build and Subscription sections, project tasks, Delete (Admin/Manager). Live.
 
 **Duplicate project** (any authenticated user): inserts `duplicateProjectPayload()` (`lib/projects.ts`) — same stage, "(Copy)" appended to `client_name`, no id/timestamps/`scheduled_call`/Stripe fields. Tasks and transactions aren't copied. On success it opens the copy's detail page, carrying over `?from=`/`?tab=` so the back link still returns to the original view.
 

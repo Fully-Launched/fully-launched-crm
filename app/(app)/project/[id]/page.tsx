@@ -41,8 +41,10 @@ export default async function ProjectDetailPage({
         teamMembers={(teamMembers ?? []) as TeamMember[]}
         initialTasks={(tasks ?? []) as ProjectTask[]}
         back={projectOrigin(searchParams.from, searchParams.tab)}
-        // UI only — the real gate is the "admin delete" RLS policy (migration 006)
-        canDelete={currentMember?.role === "Admin"}
+        // UI only — the real gate is the "admin or manager delete" RLS policy (migration 007)
+        canDelete={
+          currentMember?.role === "Admin" || currentMember?.role === "Manager"
+        }
       />
     </div>
   );
