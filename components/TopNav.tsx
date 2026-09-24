@@ -9,20 +9,19 @@ export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Transactions and Team are Admin-only (hidden here; their pages redirect
+  // non-Admins, and RLS is the real gate).
   const tabs = [
     { label: "Dashboard", href: "/dashboard" },
+    { label: "Leads", href: "/leads" },
     ...BRANCH_SLUGS.map((slug) => ({
-      label: branchLabel(slug),
+      // Nav-only label; the branch value and page heading stay "AI".
+      label: slug === "ai" ? "AI Integration" : branchLabel(slug),
       href: `/projects/${slug}`,
     })),
-    { label: "Leads", href: "/leads" },
+    ...(isAdmin ? [{ label: "Transactions", href: "/transactions" }] : []),
     { label: "Contacts", href: "/contacts" },
-    ...(isAdmin
-      ? [
-          { label: "Transactions", href: "/transactions" },
-          { label: "Team", href: "/team" },
-        ]
-      : []),
+    ...(isAdmin ? [{ label: "Team", href: "/team" }] : []),
   ];
 
   function isActive(href: string) {
