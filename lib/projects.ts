@@ -4,7 +4,7 @@ import type { Project } from "@/lib/types";
 // ── duplicate ────────────────────────────────────────────────────────────
 // Fields never carried over to a copy: identity/timestamps (DB assigns new
 // ones), Stripe links (a copy must not point at the original's Stripe
-// customer/subscription), and scheduled_call (a booked call belongs to one
+// customer/subscription/invoices), and scheduled_call (a booked call belongs to one
 // engagement). Transactions and project_tasks live in their own tables and
 // are never touched. The copy DOES get its own contacts row — the
 // sync_contact_from_project trigger creates one on insert, same as any
@@ -16,6 +16,8 @@ type DuplicateOmit =
   | "stripe_customer_id"
   | "stripe_subscription_id"
   | "subscription_status"
+  | "stripe_deposit_invoice_id"
+  | "stripe_build_invoice_id"
   | "scheduled_call";
 
 export function duplicateProjectPayload(
@@ -29,6 +31,8 @@ export function duplicateProjectPayload(
     stripe_customer_id,
     stripe_subscription_id,
     subscription_status,
+    stripe_deposit_invoice_id,
+    stripe_build_invoice_id,
     scheduled_call,
     ...rest
   } = project;

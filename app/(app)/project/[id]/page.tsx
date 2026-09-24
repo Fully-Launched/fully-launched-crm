@@ -4,6 +4,8 @@ import type { Project, ProjectTask, TeamMember } from "@/lib/types";
 import ProjectDetail from "@/components/ProjectDetail";
 import { projectOrigin } from "@/lib/projects";
 import { getCurrentTeamMember } from "@/lib/auth";
+import { canSendInvoices } from "@/lib/billing";
+import { stripeDashboardBase } from "@/lib/stripe";
 
 export default async function ProjectDetailPage({
   params,
@@ -45,6 +47,9 @@ export default async function ProjectDetailPage({
         canDelete={
           currentMember?.role === "Admin" || currentMember?.role === "Manager"
         }
+        // UI only — the invoice route re-checks the role server-side.
+        canInvoice={canSendInvoices(currentMember?.role)}
+        stripeDashboardBase={stripeDashboardBase()}
       />
     </div>
   );

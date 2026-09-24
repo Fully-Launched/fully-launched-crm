@@ -66,6 +66,8 @@ Live tables: `projects`, `team_members`, `project_tasks`, `transactions`, `leads
 | build_value | $ — full price of the build. Meaningful only when `build` is true |
 | payment_status | single-select: Waiting for Deposit / Deposit Paid / Waiting for Payment / Paid. Meaningful only when `build` is true |
 | build_end_date | date. Meaningful only when `build` is true |
+| deposit_percent | numeric, not null, default 50, check 0 < x ≤ 100 (migration 010). Deposit = `build_value × deposit_percent / 100` |
+| stripe_deposit_invoice_id / stripe_build_invoice_id | text (migration 010) — the Stripe Invoice sent for each; blocks resending |
 | subscription | boolean, default false |
 | subscription_value | $/mo. Meaningful only when `subscription` is true |
 | deliver_date | date. Meaningful only when `subscription` is true |
@@ -193,22 +195,34 @@ Cal.com over Calendly. No team/paid tier — work around the paid-team gate with
 - Scales with headcount at no per-seat cost
 - If email matching proves unreliable, fall back to manually entering Scheduled Call; treat webhook auto-sync as phase 2
 
-## Stripe plan
+## Stripe
 
-Not wired up yet. API keys server-side only, from env vars, never hardcoded.
+API keys server-side only, from env vars, never hardcoded. Start in **test mode** (`sk_test_…`).
 
-- **Built:** placeholder buttons on the Manage Project page — "Invoice for Deposit" / "Invoice for Build" (Build section) and "Send Monthly Invoice" (Subscription section). They currently show a plain notice instead of calling Stripe.
-- **Deposit → Build swap:** "Invoice for Deposit" shows while `payment_status` is Waiting for Deposit or unset; it swaps to "Invoice for Build" once `payment_status` reaches Deposit Paid or later. Amount is tied to `value`/`build_value` (no line-item editor yet).
-- **Customer link:** `stripe_customer_id` links project → Stripe Customer.
-- **Subscriptions:** Subscription-toggled projects use Stripe Subscriptions, store `stripe_subscription_id`, surface `subscription_status`. "Send Monthly Invoice" is manual-trigger only.
-- **Webhooks:** `invoice.paid`, `customer.subscription.updated`, etc. → app endpoint keeps `payment_status`/`subscription_status` in sync.
-- **Deferred:** Subscription auto-charge — do NOT build without a separate explicit decision.
+### Piece 1 — Deposit / Build invoices (built, migration 010)
+
+- **Env vars** (`.env.local` + Vercel, none are `NEXT_PUBLIC_`): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`. Nothing works until these are set; the build doesn't need them (clients are created lazily).
+- **Stripe webhook endpoint:** `https://crm.fullylaunched.com/api/webhooks/stripe`, events `invoice.paid` and `invoice.payment_failed`.
+- **Buttons** (Manage Project → Build section → Invoicing): "Send Deposit Invoice ($X)" while `payment_status` is unset / Waiting for Deposit, "Send Build Invoice ($X)" once it reaches Deposit Paid. **Admin or Manager only** — `POST /api/projects/[id]/invoice` returns 403 otherwise; the UI check just hides the buttons. A confirm dialog shows amount + recipient before sending.
+- **Amounts** (`lib/billing.ts`, integer cents, shared by UI and route): deposit = `build_value × deposit_percent / 100`; Build invoice = **the balance** (`build_value − deposit`), not the full amount. `deposit_percent` (default 50) is editable in the Build section and locks once the deposit invoice is sent.
+- **Stripe Invoices, not Checkout** (Checkout links expire after 24h): `collection_method: "send_invoice"` — Stripe emails it, **due in 14 days** (`INVOICE_DAYS_UNTIL_DUE`), never auto-charged. Draft with only our line item → finalize → send; every Stripe write has an idempotency key, so double-clicks/retries don't send twice. Invoice metadata carries `project_id` + `kind`.
+- **Customer: one per company**, matched by `client_name` (trimmed, case-insensitive) across projects that already have a `stripe_customer_id`. The customer's email is **overwritten with the project's contact email on every send** (Stripe emails invoices to the customer's address).
+- **No in-app resend/void.** After sending, the Invoicing field shows "… invoice sent · View in Stripe"; resend or void in the Stripe dashboard. `stripe_deposit_invoice_id` / `stripe_build_invoice_id` block a second send.
+- **Webhook** (`app/api/webhooks/stripe/route.ts`, excluded from the auth middleware): verifies the Stripe signature before anything else. `invoice.paid` → `payment_status` Deposit Paid / Paid, only for invoices this app created (metadata) whose id matches the stored one, and never moves status backwards. `invoice.payment_failed` → logged only, no action. Writes via the service-role client (`lib/supabase/admin.ts`, server-only, bypasses RLS — webhook use only).
+- Duplicate never copies `stripe_*` ids.
+- `payment_status` is still hand-editable by any authenticated user (projects update isn't role-gated) — known gap, not addressed.
+
+### Piece 2 — Subscriptions (not built)
+
+- "Send Monthly Invoice" (Subscription section) is still a placeholder notice.
+- Plan: Subscription-toggled projects use Stripe Subscriptions, store `stripe_subscription_id`, surface `subscription_status` (Stripe statuses include incomplete, trialing, active, past_due, canceled, unpaid, paused). Webhooks `customer.subscription.*`, `invoice.paid`, `invoice.payment_failed`.
+- **Deferred:** Subscription auto-charge — do NOT build without a separate explicit decision. Open: failed-payment handling, proration, billing-event notifications.
 
 ## Deferred / explicitly out of scope
 
 - Salesperson role-gating end-to-end verification
 - Cal.com booking embed + webhook (plan above)
-- Stripe: invoice buttons first; automatic subscription charging needs a separate decision before building (plan above)
+- Stripe subscriptions (Piece 2); automatic subscription charging needs a separate decision before building (see Stripe section)
 - Customer-facing portal (separate client auth) — own future project, not started
 - AI-generated proposals/SoWs, LinkedIn OAuth, notifications — no defined format/scope yet
 
@@ -217,4 +231,4 @@ Not wired up yet. API keys server-side only, from env vars, never hardcoded.
 1. ~~"+ Add Team Member" screen (three-role picker)~~ — done, shipped in 247e927
 2. Load real client data — get Luke's actual client list first, don't invent sample data (all tables are currently empty)
 3. Cal.com integration
-4. Stripe: connect invoice buttons
+4. Stripe: set env vars + webhook endpoint (test mode) and test Deposit/Build invoices end to end; then Piece 2 (subscriptions)

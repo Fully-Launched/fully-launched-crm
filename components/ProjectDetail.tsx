@@ -25,6 +25,14 @@ import ProjectTasksManager from "@/components/ProjectTasksManager";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ChannelsField from "@/components/ChannelsField";
 import { branchChangePatch } from "@/lib/channels";
+import {
+  INVOICE_DAYS_UNTIL_DUE,
+  buildBalanceCents,
+  depositCents,
+  invoiceCents,
+  invoiceIdField,
+  type InvoiceKind,
+} from "@/lib/billing";
 
 const currencyFormat = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -65,12 +73,18 @@ export default function ProjectDetail({
   initialTasks,
   back,
   canDelete,
+  canInvoice,
+  stripeDashboardBase,
 }: {
   initialProject: Project;
   teamMembers: TeamMember[];
   initialTasks: ProjectTask[];
   back: { href: string; label: string };
   canDelete: boolean;
+  // Admin/Manager — hides the Send buttons; the invoice route enforces it.
+  canInvoice: boolean;
+  // For "View in Stripe" links; null when Stripe isn't configured.
+  stripeDashboardBase: string | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
@@ -78,6 +92,8 @@ export default function ProjectDetail({
   const [project, setProject] = useState<Project>(initialProject);
   const [error, setError] = useState<string | null>(null);
   const [invoiceNotice, setInvoiceNotice] = useState<string | null>(null);
+  const [pendingInvoice, setPendingInvoice] = useState<InvoiceKind | null>(null);
+  const [sendingInvoice, setSendingInvoice] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
@@ -140,6 +156,59 @@ export default function ProjectDetail({
     !!project.payment_status &&
     PAYMENT_STATUS_ORDER.indexOf(project.payment_status) >=
       PAYMENT_STATUS_ORDER.indexOf("Deposit Paid");
+
+  // Which Build invoice is next: Deposit until payment_status reaches
+  // Deposit Paid, then the Build balance.
+  const invoiceStage: InvoiceKind = depositCleared ? "build" : "deposit";
+  const stageInvoiceId = project[invoiceIdField(invoiceStage)];
+  const money = (cents: number) => currencyFormat.format(cents / 100);
+
+  function requestInvoice(kind: InvoiceKind) {
+    if (!project.email?.trim()) {
+      setError("Add a contact email before sending an invoice.");
+      return;
+    }
+    if (invoiceCents(project, kind) <= 0) {
+      setError("Set a Build Value before sending an invoice.");
+      return;
+    }
+    setPendingInvoice(kind);
+  }
+
+  async function sendInvoice(kind: InvoiceKind) {
+    setPendingInvoice(null);
+    setSendingInvoice(true);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        setError(json?.error ?? `Sending the invoice failed (${res.status}).`);
+        return;
+      }
+      setProject((prev) => ({ ...prev, ...json.patch }));
+      setError(null);
+      setInvoiceNotice(
+        `${kind === "deposit" ? "Deposit" : "Build"} invoice sent to ${project.email}.`
+      );
+    } catch {
+      setError("Couldn't reach the server — the invoice may not have been sent. Check Stripe before retrying.");
+    } finally {
+      setSendingInvoice(false);
+    }
+  }
+
+  function invoiceConfirmTitle(kind: InvoiceKind): string {
+    const amount = money(invoiceCents(project, kind));
+    const what =
+      kind === "deposit"
+        ? `deposit invoice (${project.deposit_percent}% of ${currencyFormat.format(project.build_value ?? 0)})`
+        : `build invoice (the balance after the ${project.deposit_percent}% deposit)`;
+    return `Send a ${amount} ${what} to ${project.email}? Stripe emails it; payment is due in ${INVOICE_DAYS_UNTIL_DUE} days.`;
+  }
 
   function placeholderInvoice(label: string) {
     setInvoiceNotice(
@@ -301,6 +370,29 @@ export default function ProjectDetail({
                 onCommit={(v) => update({ build_value: v === "" ? null : Number(v) })}
               />
             </Field>
+            <Field label="Deposit">
+              {project.stripe_deposit_invoice_id ? (
+                // Locked once invoiced: the Build balance is derived from it.
+                <p className="px-1.5 py-1 text-sm text-foreground">
+                  {project.deposit_percent}% = {money(depositCents(project))}{" "}
+                  <span className="text-xs text-neutral-400">(invoiced)</span>
+                </p>
+              ) : (
+                <TextCell
+                  type="number"
+                  value={String(project.deposit_percent)}
+                  displayValue={`${project.deposit_percent}% = ${money(depositCents(project))}`}
+                  onCommit={(v) => {
+                    const pct = Number(v);
+                    if (!(pct > 0 && pct <= 100)) {
+                      setError("Deposit must be more than 0% and at most 100%.");
+                      return;
+                    }
+                    update({ deposit_percent: pct });
+                  }}
+                />
+              )}
+            </Field>
             <Field label="Payment Status">
               <select
                 value={project.payment_status ?? ""}
@@ -321,15 +413,41 @@ export default function ProjectDetail({
               <DateCell value={project.build_end_date} onCommit={(v) => update({ build_end_date: v })} />
             </Field>
             <Field label="Invoicing">
-              <button
-                type="button"
-                onClick={() =>
-                  placeholderInvoice(depositCleared ? "Invoice for Build" : "Invoice for Deposit")
-                }
-                className="rounded-md bg-header px-3 py-1.5 text-sm font-medium text-header-foreground"
-              >
-                {depositCleared ? "Invoice for Build" : "Invoice for Deposit"}
-              </button>
+              {project.payment_status === "Paid" ? (
+                <p className="px-1.5 py-1 text-sm text-foreground">Paid</p>
+              ) : stageInvoiceId ? (
+                <p className="px-1.5 py-1 text-sm text-foreground">
+                  {invoiceStage === "deposit" ? "Deposit" : "Build"} invoice sent
+                  {stripeDashboardBase && (
+                    <>
+                      {" · "}
+                      <a
+                        href={`${stripeDashboardBase}/invoices/${stageInvoiceId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-accent hover:underline"
+                      >
+                        View in Stripe
+                      </a>
+                    </>
+                  )}
+                </p>
+              ) : canInvoice ? (
+                <button
+                  type="button"
+                  onClick={() => requestInvoice(invoiceStage)}
+                  disabled={sendingInvoice}
+                  className="rounded-md bg-header px-3 py-1.5 text-sm font-medium text-header-foreground disabled:opacity-50"
+                >
+                  {sendingInvoice
+                    ? "Sending…"
+                    : invoiceStage === "deposit"
+                      ? `Send Deposit Invoice (${money(depositCents(project))})`
+                      : `Send Build Invoice (${money(buildBalanceCents(project))})`}
+                </button>
+              ) : (
+                <p className="px-1.5 py-1 text-sm text-neutral-400">No invoice sent</p>
+              )}
             </Field>
           </div>
         )}
@@ -383,6 +501,15 @@ export default function ProjectDetail({
           initialTasks={initialTasks}
         />
       </div>
+
+      <ConfirmDialog
+        open={pendingInvoice !== null}
+        title={pendingInvoice ? invoiceConfirmTitle(pendingInvoice) : ""}
+        confirmLabel="Send invoice"
+        tone="default"
+        onCancel={() => setPendingInvoice(null)}
+        onConfirm={() => pendingInvoice && sendInvoice(pendingInvoice)}
+      />
 
       <ConfirmDialog
         open={confirmingDelete}

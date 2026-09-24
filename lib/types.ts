@@ -33,6 +33,11 @@ export type Project = {
   build_value: number | null;
   payment_status: PaymentStatus | null;
   build_end_date: string | null;
+  // Deposit = build_value * deposit_percent / 100 (migration 010).
+  deposit_percent: number;
+  // Stripe Invoices sent from the Build section (migration 010).
+  stripe_deposit_invoice_id: string | null;
+  stripe_build_invoice_id: string | null;
 
   subscription: boolean;
   subscription_value: number | null;
