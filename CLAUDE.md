@@ -14,7 +14,7 @@
 - Email/password only, no signup page
 - Accounts are created manually in Supabase dashboard → Authentication → **Add User** (not "Invite User" — Invite User triggers an email flow that caused problems last time). Luke sets each person's initial password directly and sends it himself.
 - Unauthenticated → redirect to `/login`; authenticated → land on `/dashboard`
-- Nav tabs, in order: Dashboard / Leads / All / Media / Websites / Ecommerce / AI Integration / Transactions / Contacts / Team. Transactions and Team are Admin-only (hidden from nav, pages redirect non-Admins; RLS is the real gate). "AI Integration" is a nav-only label — the branch value, slug, and page heading stay "AI". Below `sm` the nav collapses to a hamburger dropdown (`components/TopNav.tsx`).
+- Nav (`components/TopNav.tsx`), two levels. Top: Dashboard / Leads / Projects / Transactions / Contacts / Team. "Projects" goes to `/projects/all` and is highlighted on any `/projects/*` page and on `/project/[id]`; on `/projects/*` a lighter second row shows All / Media / Websites / Ecomm / AI Integration (nav-only labels — routes, branch values, and page headings are unchanged, e.g. `/projects/ai` still says "AI"). Transactions is Admin-only (hidden from nav, page redirects non-Admins; RLS is the real gate). Team is visible to everyone: Admins get the roster manager, everyone else a read-only directory with booking links. Below `sm` the nav collapses to a hamburger dropdown with the Projects sub-tabs nested under an expandable Projects entry.
 
 ## Branding
 
@@ -188,16 +188,21 @@ If Target Date is in the past and Stage is **not** Complete, Subscriber, or Lost
 
 **Live:** `crm.fullylaunched.com` via CNAME, verified on Vercel. No paid Vercel Team needed for a custom domain (that's only for removing the personal-account slug from the default `*.vercel.app` URL).
 
-## Cal.com plan
+## Cal.com
 
-Cal.com over Calendly. No team/paid tier — work around the paid-team gate with individual free accounts:
+Cal.com over Calendly. No team/paid tier — each team member uses their own free individual Cal.com account (on their `@fullylaunched.com` email); scales with headcount at no per-seat cost.
 
-- Each team member creates their own free individual Cal.com account
-- `team_members.booking_link` (text, already in schema) holds one booking URL per person
-- Manage Project page shows the booking link for the project's assigned Owner
-- Each person's account gets its own `booking.created` webhook → same app endpoint → match to project by booker's email → update `scheduled_call`
-- Scales with headcount at no per-seat cost
-- If email matching proves unreliable, fall back to manually entering Scheduled Call; treat webhook auto-sync as phase 2
+### Stage 1 — booking links (built)
+
+- `team_members.booking_link` (text, migration 002) holds one Cal.com URL per person. **Admin-only edits** on the Team page (TeamManager "Booking link" column; RLS from migration 005). Non-Admins see a read-only directory with each link (open + copy).
+- **Book a call** section on the Manage Project page (`components/BookCallSection.tsx`): everyone with a link, the project's Owners first. Links are pre-filled by `bookingUrl()` (`lib/booking.ts`): `name`, `email` (the project's contact), `metadata[project_id]`, `metadata[booked_by]` (current team member).
+
+### Stage 2 — call history (migration 012; webhook not built yet)
+
+- `calls` (one row per Cal.com booking, unique `cal_uid`; status booked / cancelled / rescheduled; `matched_by` metadata / email / manual / none) and `call_projects` (many-to-many — a call links to **every** matching project, e.g. Hesedea ×3). Read-only to the app; written by the webhook with the service role. `assign_call_to_project()` (security definer) links an unmatched call from the Dashboard.
+- Webhook `/api/webhooks/calcom` (under `/api/webhooks/`, so exempt from the auth middleware; must verify `X-Cal-Signature-256`, HMAC-SHA256 of the raw body with one shared `CALCOM_WEBHOOK_SECRET` across everyone's webhooks). Events: BOOKING_CREATED, BOOKING_RESCHEDULED, BOOKING_CANCELLED.
+- Matching: `metadata.project_id` first (**confirm with a real test booking that metadata reaches the webhook before relying on it**), else attendee email vs `projects.email` (trimmed, case-insensitive) across projects in **every** stage; no match → stored unlinked and shown on the Dashboard's "Unmatched calls" card. Organizer matched to `team_members.email`.
+- Shown: a Calls section on the project page (upcoming first, then past; "Completed" = booked + past); cancelled/rescheduled stay in history. Dashboard "Upcoming Calls" reads from `calls`; `projects.scheduled_call` stays in the schema, unused.
 
 ## Stripe
 
@@ -225,7 +230,7 @@ API keys server-side only, from env vars, never hardcoded. Start in **test mode*
 ## Deferred / explicitly out of scope
 
 - Salesperson role-gating end-to-end verification
-- Cal.com booking embed + webhook (plan above)
+- Cal.com stage 2 — webhook + call history (see Cal.com section)
 - Stripe subscriptions (Piece 2); automatic subscription charging needs a separate decision before building (see Stripe section)
 - Customer-facing portal (separate client auth) — own future project, not started
 - AI-generated proposals/SoWs, LinkedIn OAuth, notifications — no defined format/scope yet
@@ -234,5 +239,5 @@ API keys server-side only, from env vars, never hardcoded. Start in **test mode*
 
 1. ~~"+ Add Team Member" screen (three-role picker)~~ — done, shipped in 247e927
 2. Load real client data — get Luke's actual client list first, don't invent sample data (all tables are currently empty)
-3. Cal.com integration
+3. Cal.com: apply migration 012, build stage 2 (webhook + call history), set up each person's Cal.com webhook, test booking
 4. Stripe: set env vars + webhook endpoint (test mode) and test Deposit/Build invoices end to end; then Piece 2 (subscriptions)

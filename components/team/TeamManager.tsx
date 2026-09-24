@@ -12,6 +12,8 @@ import {
 } from "@/lib/team";
 import AddTeamMemberForm from "@/components/team/AddTeamMemberForm";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import TextCell from "@/components/table/TextCell";
+import { isValidBookingLink } from "@/lib/booking";
 
 function byName(a: TeamMember, b: TeamMember) {
   return a.name.localeCompare(b.name);
@@ -77,6 +79,31 @@ export default function TeamManager({
     setError(null);
   }
 
+  async function saveBookingLink(id: string, raw: string) {
+    const booking_link = raw.trim() || null;
+    if (booking_link && !isValidBookingLink(booking_link)) {
+      setError("Booking link must be a full URL, e.g. https://cal.com/name/30min");
+      return;
+    }
+    const previous = members;
+    setMembers((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, booking_link } : m))
+    );
+    const { data, error } = await supabase
+      .from("team_members")
+      .update({ booking_link })
+      .eq("id", id)
+      .select("id");
+    if (error || !data || data.length === 0) {
+      setMembers(previous);
+      setError(
+        error ? friendlyTeamError(error) : "Only Admins can change the team."
+      );
+      return;
+    }
+    setError(null);
+  }
+
   function requestRoleChange(member: TeamMember, role: Role) {
     if (role === member.role) return;
     // Promotion grants Transactions + Team access — confirm first.
@@ -101,7 +128,7 @@ export default function TeamManager({
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50">
-              {["Name", "Email", "Role", "Added"].map((h) => (
+              {["Name", "Email", "Role", "Booking link", "Added"].map((h) => (
                 <th
                   key={h}
                   className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500"
@@ -161,6 +188,14 @@ export default function TeamManager({
                         {lock.reason}
                       </p>
                     )}
+                  </td>
+                  <td className="px-3 py-2">
+                    <TextCell
+                      type="text"
+                      value={m.booking_link}
+                      placeholder="Add Cal.com link"
+                      onCommit={(v) => saveBookingLink(m.id, v)}
+                    />
                   </td>
                   <td className="px-3 py-2 text-neutral-500">
                     {new Date(m.created_at).toLocaleDateString()}

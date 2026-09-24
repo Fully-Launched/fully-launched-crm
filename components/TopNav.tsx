@@ -24,15 +24,16 @@ export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
   // "Projects" stays highlighted on a single project's page too.
   const projectsActive = onProjects || pathname.startsWith("/project/");
 
-  // Transactions and Team are Admin-only (hidden here; their pages redirect
-  // non-Admins, and RLS is the real gate).
+  // Transactions is Admin-only (hidden here; its page redirects non-Admins,
+  // and RLS is the real gate). Team is visible to everyone — non-Admins get a
+  // read-only directory with booking links.
   const tabs = [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Leads", href: "/leads" },
     { label: "Projects", href: PROJECTS_HREF },
     ...(isAdmin ? [{ label: "Transactions", href: "/transactions" }] : []),
     { label: "Contacts", href: "/contacts" },
-    ...(isAdmin ? [{ label: "Team", href: "/team" }] : []),
+    { label: "Team", href: "/team" },
   ];
 
   const subTabs = BRANCH_SLUGS.map((slug) => ({

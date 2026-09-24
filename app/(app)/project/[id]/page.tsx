@@ -50,6 +50,7 @@ export default async function ProjectDetailPage({
         // UI only — the invoice route re-checks the role server-side.
         canInvoice={canSendInvoices(currentMember?.role)}
         stripeDashboardBase={stripeDashboardBase()}
+        currentMemberId={currentMember?.id ?? null}
       />
     </div>
   );

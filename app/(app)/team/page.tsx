@@ -1,18 +1,15 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentTeamMember } from "@/lib/auth";
 import type { TeamMember } from "@/lib/types";
 import TeamManager from "@/components/team/TeamManager";
+import TeamDirectory from "@/components/team/TeamDirectory";
 
 export default async function TeamPage() {
   const teamMember = await getCurrentTeamMember();
-
-  // Frontend gate — the tab is also hidden from nav for non-Admins. The real
-  // enforcement is the Admin-only write policies on `team_members`
-  // (migration 005), so this is belt-and-suspenders, not the source of truth.
-  if (teamMember?.role !== "Admin") {
-    redirect("/dashboard");
-  }
+  // Admins manage the roster; everyone else gets a read-only directory with
+  // booking links. Only the UI differs — writes to team_members are
+  // Admin-only in RLS (migration 005) regardless.
+  const isAdmin = teamMember?.role === "Admin";
 
   const supabase = createClient();
   const { data: members } = await supabase
@@ -23,13 +20,21 @@ export default async function TeamPage() {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-semibold text-foreground">Team</h1>
-      <p className="mt-1 text-sm text-neutral-500">Admin only.</p>
+      <p className="mt-1 text-sm text-neutral-500">
+        {isAdmin
+          ? "Manage the roster, roles, and Cal.com booking links."
+          : "Cal.com booking links for booking a client call with the right person."}
+      </p>
 
       <div className="mt-6">
-        <TeamManager
-          initialMembers={(members ?? []) as TeamMember[]}
-          currentUserId={teamMember.id}
-        />
+        {isAdmin ? (
+          <TeamManager
+            initialMembers={(members ?? []) as TeamMember[]}
+            currentUserId={teamMember.id}
+          />
+        ) : (
+          <TeamDirectory members={(members ?? []) as TeamMember[]} />
+        )}
       </div>
     </div>
   );
