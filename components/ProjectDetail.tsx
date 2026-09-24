@@ -198,7 +198,7 @@ export default function ProjectDetail({
       )}
 
       <div className="mt-6 grid grid-cols-1 gap-6 rounded-lg border border-neutral-200 p-5 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Client / Project Name">
+        <Field label="Company">
           <TextCell value={project.client_name} onCommit={(v) => update({ client_name: v })} />
         </Field>
         <Field label="Contact Name">

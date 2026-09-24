@@ -162,7 +162,7 @@ export default function ProjectsTable({
     () => [
       {
         id: "name",
-        label: "Client Name",
+        label: "Company",
         filter: { type: "text" },
         getSortValue: (p) => p.client_name,
         matchesFilter: (p, v) => textMatch(p.client_name, v),
