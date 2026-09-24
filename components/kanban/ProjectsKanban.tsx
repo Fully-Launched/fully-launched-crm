@@ -196,6 +196,7 @@ export default function ProjectsKanban({
                     key={p.id}
                     project={p}
                     owners={owners(p)}
+                    showBranch={tab === "all"}
                     href={projectDetailHref(p.id, "kanban", tab)}
                     isClickSuppressed={() => draggingRef.current}
                   />
@@ -210,6 +211,7 @@ export default function ProjectsKanban({
             <KanbanCardPreview
               project={activeProject}
               owners={owners(activeProject)}
+              showBranch={tab === "all"}
             />
           )}
         </DragOverlay>

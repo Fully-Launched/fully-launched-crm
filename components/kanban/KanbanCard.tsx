@@ -16,9 +16,11 @@ export type OwnerPill = { id: string; name: string; color: string };
 function CardBody({
   project,
   owners,
+  showBranch,
 }: {
   project: Project;
   owners: OwnerPill[];
+  showBranch: boolean;
 }) {
   const overdue = isOverdue(project);
   return (
@@ -28,7 +30,7 @@ function CardBody({
       </p>
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        {project.branch && (
+        {showBranch && project.branch && (
           <span
             className={`rounded-full px-2 py-0.5 text-xs font-medium ${BRANCH_COLORS[project.branch]}`}
           >
@@ -69,11 +71,14 @@ const CARD_CLASS =
 export default function KanbanCard({
   project,
   owners,
+  showBranch,
   href,
   isClickSuppressed,
 }: {
   project: Project;
   owners: OwnerPill[];
+  // Only on the All board — on a branch board every card shares the branch.
+  showBranch: boolean;
   href: string;
   isClickSuppressed: () => boolean;
 }) {
@@ -101,7 +106,7 @@ export default function KanbanCard({
         className="absolute inset-0 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
         aria-label={`Open ${project.client_name}`}
       />
-      <CardBody project={project} owners={owners} />
+      <CardBody project={project} owners={owners} showBranch={showBranch} />
     </div>
   );
 }
@@ -111,13 +116,15 @@ export default function KanbanCard({
 export function KanbanCardPreview({
   project,
   owners,
+  showBranch,
 }: {
   project: Project;
   owners: OwnerPill[];
+  showBranch: boolean;
 }) {
   return (
     <div className={`${CARD_CLASS} cursor-grabbing shadow-lg`}>
-      <CardBody project={project} owners={owners} />
+      <CardBody project={project} owners={owners} showBranch={showBranch} />
     </div>
   );
 }
