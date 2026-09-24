@@ -23,6 +23,8 @@ import BadgeSelectCell from "@/components/table/BadgeSelectCell";
 import MultiSelectCell from "@/components/table/MultiSelectCell";
 import ProjectTasksManager from "@/components/ProjectTasksManager";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import ChannelsField from "@/components/ChannelsField";
+import { branchChangePatch } from "@/lib/channels";
 
 const currencyFormat = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -159,7 +161,7 @@ export default function ProjectDetail({
           value={project.branch}
           options={BRANCHES}
           colors={BRANCH_COLORS}
-          onCommit={(v) => update({ branch: v as Branch })}
+          onCommit={(v) => update(branchChangePatch(project, v as Branch))}
         />
         <BadgeSelectCell
           value={project.stage}
@@ -228,6 +230,13 @@ export default function ProjectDetail({
             options={SOURCES}
             colors={SOURCE_COLORS}
             onCommit={(v) => update({ source: v })}
+          />
+        </Field>
+        <Field label="Channels">
+          <ChannelsField
+            branch={project.branch}
+            value={project.channels}
+            onCommit={(channels) => update({ channels })}
           />
         </Field>
         <Field label="Value">

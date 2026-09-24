@@ -2,14 +2,16 @@
 // not brand). Brand colors themselves live in app/globals.css CSS variables
 // and tailwind.config.ts — never hardcode brand colors in components.
 
-export type Branch = "Media" | "Websites" | "Marketplace" | "AI";
+export type Branch = "Media" | "Websites" | "Ecommerce" | "AI";
 
-export const BRANCHES: Branch[] = ["Media", "Websites", "Marketplace", "AI"];
+// Order and values mirror the `projects_branch_check` constraint (migration
+// 008, which renamed Marketplace -> Ecommerce).
+export const BRANCHES: Branch[] = ["Media", "Websites", "Ecommerce", "AI"];
 
 export const BRANCH_COLORS: Record<Branch, string> = {
   Media: "bg-blue-100 text-blue-800 border border-blue-300",
   Websites: "bg-yellow-100 text-yellow-800 border border-yellow-300",
-  Marketplace: "bg-red-100 text-red-800 border border-red-300",
+  Ecommerce: "bg-red-100 text-red-800 border border-red-300",
   AI: "bg-green-100 text-green-800 border border-green-300",
 };
 
@@ -20,7 +22,7 @@ export const BRANCH_COLORS: Record<Branch, string> = {
 export const BRANCH_CHART_COLORS: Record<Branch, string> = {
   Media: "#2563eb",
   Websites: "#ca8a04",
-  Marketplace: "#dc2626",
+  Ecommerce: "#dc2626",
   AI: "#16a34a",
 };
 

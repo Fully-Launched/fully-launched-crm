@@ -21,6 +21,8 @@ export type Project = {
   owner: string[];
   salesperson: string[];
   source: string | null;
+  // Branch-specific channels/platforms (migration 008); see lib/channels.ts.
+  channels: string[] | null;
   value: number | null;
   end_date: string | null;
   target_date: string | null;

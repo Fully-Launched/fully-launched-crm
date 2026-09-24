@@ -13,7 +13,7 @@
 - Email/password only, no signup page
 - Accounts are created manually in Supabase dashboard → Authentication → **Add User** (not "Invite User" — Invite User triggers an email flow that caused problems last time). Luke sets each person's initial password directly and sends it himself.
 - Unauthenticated → redirect to `/login`; authenticated → land on `/dashboard`
-- Nav tabs: Dashboard / All / Media / Websites / Marketplace / AI / Leads / Contacts / Transactions (Transactions is Admin-only, RLS-enforced not just UI-hidden)
+- Nav tabs, in order: Dashboard / Leads / All / Media / Websites / Ecommerce / AI Integration / Transactions / Contacts / Team. Transactions and Team are Admin-only (hidden from nav, pages redirect non-Admins; RLS is the real gate). "AI Integration" is a nav-only label — the branch value, slug, and page heading stay "AI". Below `sm` the nav collapses to a hamburger dropdown (`components/TopNav.tsx`).
 
 ## Branding
 
@@ -21,15 +21,15 @@
 - Branch badge colors are fixed regardless of brand palette (functional, not brand):
   - Media — blue
   - Websites — yellow
-  - Marketplace — red
+  - Ecommerce — red
   - AI — green
 
 ## Data model (confirmed live via Supabase, 2026-09-22)
 
-Live tables: `projects`, `team_members`, `project_tasks`, `transactions`, `leads`, `contacts` — all RLS enabled. Migration 002 (clients→projects rename, category→branch, roles, Transactions/Leads/Contacts, Lost stage, Build/Subscription toggles) is **applied to the live database**. All tables currently show 0 rows — no real client data loaded yet (see punch list). `supabase/migrations/002_projects_transactions_roles.sql` is the source of truth for schema; `supabase/schema.sql` is the historical baseline.
+Live tables: `projects`, `team_members`, `project_tasks`, `transactions`, `leads`, `contacts` — all RLS enabled. Migration 002 (clients→projects rename, category→branch, roles, Transactions/Leads/Contacts, Lost stage, Build/Subscription toggles) is **applied to the live database**. `projects` had 9 rows as of 2026-09-23 (empty as of 2026-09-22). `supabase/migrations/002_projects_transactions_roles.sql` is the source of truth for schema; `supabase/schema.sql` is the historical baseline.
 
 - **Projects** (renamed from `clients`)
-- **Branch** (renamed from `category`) — Media, Websites, Marketplace, AI
+- **Branch** (renamed from `category`) — Media, Websites, Ecommerce, AI. Ecommerce was "Marketplace" until migration 008 (constraint + existing rows renamed; `/projects/marketplace` redirects to `/projects/ecommerce` via `next.config.mjs`). The check is now `projects_branch_check` — before 008 it was still named `clients_category_check`.
 - **Stage** — Leads → Interested → Signed → In Progress → Complete → Subscriber → Lost. Subscriber is a real, live stage (in `projects_stage_check`); keep it.
 - **Owner** — `uuid[]` array of team_member ids; already multi-value. (`project_tasks.owner` is a single `uuid` — intentional.)
 - **Transactions** — Admin-only, RLS-gated
@@ -42,7 +42,8 @@ Live tables: `projects`, `team_members`, `project_tasks`, `transactions`, `leads
 | Field | Type / Notes |
 |---|---|
 | client_name | text — the client/company this project is for |
-| branch | single-select: Media / Websites / Marketplace / AI, color-coded badge |
+| branch | single-select: Media / Websites / Ecommerce / AI, color-coded badge. Changing branch clears `channels` (`branchChangePatch` in `lib/channels.ts`) |
+| channels | `text[]`, nullable (migration 008) — branch-specific channels/platforms. One column for every branch; the input type is presentation only, driven by branch (options in `lib/channels.ts`, no DB check): **Ecommerce** multi-select Faire / Shopify / Etsy / TikTok Shop / Amazon / Walmart / eBay; **Media** multi-select TikTok / Instagram / LinkedIn / Facebook / YouTube / Pinterest; **Websites** single-select Custom / WordPress / Shopify / Squarespace / Wix (stored as a one-element array); **AI** free-text tags (Enter to add). Empty = null. Editable on Manage Project and as a Table column (`components/ChannelsField.tsx`); carried over by Duplicate |
 | contact_name | text |
 | email | text |
 | phone | text |

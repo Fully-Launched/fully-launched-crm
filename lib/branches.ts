@@ -1,13 +1,13 @@
 import { BRANCHES, type Branch } from "@/lib/theme";
 
 // URL-safe slugs for branch tabs/routes (/projects/[branch]).
-export type BranchSlug = "all" | "media" | "websites" | "marketplace" | "ai";
+export type BranchSlug = "all" | "media" | "websites" | "ecommerce" | "ai";
 
 export const BRANCH_SLUGS: BranchSlug[] = [
   "all",
   "media",
   "websites",
-  "marketplace",
+  "ecommerce",
   "ai",
 ];
 
@@ -15,7 +15,7 @@ const SLUG_TO_LABEL: Record<BranchSlug, string> = {
   all: "All",
   media: "Media",
   websites: "Websites",
-  marketplace: "Marketplace",
+  ecommerce: "Ecommerce",
   ai: "AI",
 };
 

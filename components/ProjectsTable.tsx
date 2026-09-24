@@ -20,6 +20,8 @@ import BadgeSelectCell from "@/components/table/BadgeSelectCell";
 import MultiSelectCell from "@/components/table/MultiSelectCell";
 import { branchSlug } from "@/lib/branches";
 import { projectDetailHref } from "@/lib/projects";
+import { branchChangePatch } from "@/lib/channels";
+import ChannelsField from "@/components/ChannelsField";
 
 type SortDir = "asc" | "desc";
 
@@ -79,6 +81,7 @@ export default function ProjectsTable({
   const [filters, setFilters] = useState<Record<string, string | string[]>>({
     name: "",
     branch: [],
+    channels: "",
     contact: "",
     email: "",
     phone: "",
@@ -170,7 +173,24 @@ export default function ProjectsTable({
             value={p.branch}
             options={BRANCHES}
             colors={BRANCH_COLORS}
-            onCommit={(v) => updateProject(p.id, { branch: v as Branch })}
+            onCommit={(v) =>
+              updateProject(p.id, branchChangePatch(p, v as Branch))
+            }
+          />
+        ),
+      },
+      {
+        id: "channels",
+        label: "Channels",
+        filter: { type: "text" },
+        getSortValue: (p) => (p.channels ?? []).join(", "),
+        // Text search that matches any channel on the row.
+        matchesFilter: (p, v) => textMatch((p.channels ?? []).join(" "), v),
+        render: (p) => (
+          <ChannelsField
+            branch={p.branch}
+            value={p.channels}
+            onCommit={(channels) => updateProject(p.id, { channels })}
           />
         ),
       },
