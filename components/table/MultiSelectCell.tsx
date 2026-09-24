@@ -1,8 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Popover from "@/components/table/Popover";
 import type { TeamMember } from "@/lib/types";
+import { memberColors } from "@/lib/team";
+import { UNKNOWN_MEMBER_COLOR } from "@/lib/theme";
 
 export default function MultiSelectCell({
   teamMembers,
@@ -16,6 +18,7 @@ export default function MultiSelectCell({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  const colors = useMemo(() => memberColors(teamMembers), [teamMembers]);
   const selected = teamMembers.filter((m) => selectedIds.includes(m.id));
 
   function toggle(id: string) {
@@ -39,7 +42,9 @@ export default function MultiSelectCell({
           selected.map((m) => (
             <span
               key={m.id}
-              className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700"
+              className={`rounded-full px-2 py-0.5 text-xs ${
+                colors.get(m.id) ?? UNKNOWN_MEMBER_COLOR
+              }`}
             >
               {m.name}
             </span>

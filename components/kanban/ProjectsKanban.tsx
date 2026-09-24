@@ -18,7 +18,11 @@ import type { Project, TeamMember } from "@/lib/types";
 import { branchValue, type BranchSlug } from "@/lib/branches";
 import { projectDetailHref } from "@/lib/projects";
 import KanbanColumn from "@/components/kanban/KanbanColumn";
-import KanbanCard, { KanbanCardPreview } from "@/components/kanban/KanbanCard";
+import KanbanCard, {
+  KanbanCardPreview,
+  type OwnerPill,
+} from "@/components/kanban/KanbanCard";
+import { memberColors } from "@/lib/team";
 
 function byUpdatedDesc(a: Project, b: Project) {
   return Date.parse(b.updated_at) - Date.parse(a.updated_at);
@@ -61,11 +65,13 @@ export default function ProjectsKanban({
     () => new Map(teamMembers.map((m) => [m.id, m.name])),
     [teamMembers]
   );
+  const colors = useMemo(() => memberColors(teamMembers), [teamMembers]);
 
-  function ownerNames(p: Project) {
-    return p.owner
-      .map((id) => membersById.get(id))
-      .filter((n): n is string => !!n);
+  function owners(p: Project): OwnerPill[] {
+    return p.owner.flatMap((id) => {
+      const name = membersById.get(id);
+      return name ? [{ id, name, color: colors.get(id)! }] : [];
+    });
   }
 
   // Grouped + sorted in one place, so there's no unsorted render path.
@@ -189,7 +195,7 @@ export default function ProjectsKanban({
                   <KanbanCard
                     key={p.id}
                     project={p}
-                    ownerNames={ownerNames(p)}
+                    owners={owners(p)}
                     href={projectDetailHref(p.id, "kanban", tab)}
                     isClickSuppressed={() => draggingRef.current}
                   />
@@ -203,7 +209,7 @@ export default function ProjectsKanban({
           {activeProject && (
             <KanbanCardPreview
               project={activeProject}
-              ownerNames={ownerNames(activeProject)}
+              owners={owners(activeProject)}
             />
           )}
         </DragOverlay>

@@ -11,12 +11,14 @@ const currencyFormat = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+export type OwnerPill = { id: string; name: string; color: string };
+
 function CardBody({
   project,
-  ownerNames,
+  owners,
 }: {
   project: Project;
-  ownerNames: string[];
+  owners: OwnerPill[];
 }) {
   const overdue = isOverdue(project);
   return (
@@ -33,12 +35,12 @@ function CardBody({
             {project.branch}
           </span>
         )}
-        {ownerNames.map((name) => (
+        {owners.map((o) => (
           <span
-            key={name}
-            className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700"
+            key={o.id}
+            className={`rounded-full px-2 py-0.5 text-xs ${o.color}`}
           >
-            {name}
+            {o.name}
           </span>
         ))}
       </div>
@@ -66,12 +68,12 @@ const CARD_CLASS =
 
 export default function KanbanCard({
   project,
-  ownerNames,
+  owners,
   href,
   isClickSuppressed,
 }: {
   project: Project;
-  ownerNames: string[];
+  owners: OwnerPill[];
   href: string;
   isClickSuppressed: () => boolean;
 }) {
@@ -99,7 +101,7 @@ export default function KanbanCard({
         className="absolute inset-0 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
         aria-label={`Open ${project.client_name}`}
       />
-      <CardBody project={project} ownerNames={ownerNames} />
+      <CardBody project={project} owners={owners} />
     </div>
   );
 }
@@ -108,14 +110,14 @@ export default function KanbanCard({
 // wiring, just the visuals.
 export function KanbanCardPreview({
   project,
-  ownerNames,
+  owners,
 }: {
   project: Project;
-  ownerNames: string[];
+  owners: OwnerPill[];
 }) {
   return (
     <div className={`${CARD_CLASS} cursor-grabbing shadow-lg`}>
-      <CardBody project={project} ownerNames={ownerNames} />
+      <CardBody project={project} owners={owners} />
     </div>
   );
 }

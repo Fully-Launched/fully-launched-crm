@@ -1,4 +1,8 @@
-import type { Role } from "@/lib/theme";
+import {
+  MEMBER_COLOR_ROTATION,
+  PINNED_MEMBER_COLORS,
+  type Role,
+} from "@/lib/theme";
 import type { TeamMember } from "@/lib/types";
 
 // team_members RLS and the transactions policy both match
@@ -6,6 +10,29 @@ import type { TeamMember } from "@/lib/types";
 // a mixed-case roster email would silently fail every Admin check.
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
+}
+
+// id -> pill classes. Pinned emails get their fixed color; everyone else
+// rotates through MEMBER_COLOR_ROTATION in (created_at, id) order. New members
+// sort last, so adding someone never changes existing colors (removing
+// someone shifts the members added after them).
+export function memberColors(members: TeamMember[]): Map<string, string> {
+  const colors = new Map<string, string>();
+  const rotating: TeamMember[] = [];
+  for (const m of members) {
+    const pinned = PINNED_MEMBER_COLORS[normalizeEmail(m.email)];
+    if (pinned) colors.set(m.id, pinned);
+    else rotating.push(m);
+  }
+  rotating
+    .sort(
+      (a, b) =>
+        a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id)
+    )
+    .forEach((m, i) =>
+      colors.set(m.id, MEMBER_COLOR_ROTATION[i % MEMBER_COLOR_ROTATION.length])
+    );
+  return colors;
 }
 
 export function countAdmins(members: TeamMember[]): number {
