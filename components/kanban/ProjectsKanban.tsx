@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -33,8 +34,10 @@ export default function ProjectsKanban({
   tab: BranchSlug;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   // True from drag start until just after drop, so the click that can fire
@@ -126,8 +129,10 @@ export default function ProjectsKanban({
   }
 
   // Same insert as the Table's "+ New Project": a blank Leads project in the
-  // current tab's branch (none on the All tab).
+  // current tab's branch (none on the All tab), opened right away like
+  // Duplicate. from/tab bring Back to this Kanban tab.
   async function addProject() {
+    setCreating(true);
     const { data, error } = await supabase
       .from("projects")
       .insert({
@@ -135,15 +140,16 @@ export default function ProjectsKanban({
         branch: branchValue(tab),
         stage: "Leads",
       })
-      .select()
+      .select("id")
       .single();
 
     if (error || !data) {
+      setCreating(false);
       setError(error?.message ?? "Could not create project");
       return;
     }
-    setError(null);
-    setProjects((prev) => [data as Project, ...prev]);
+    router.push(projectDetailHref(data.id, "kanban", tab));
+    router.refresh();
   }
 
   return (
@@ -155,9 +161,10 @@ export default function ProjectsKanban({
         <button
           type="button"
           onClick={addProject}
-          className="rounded-md bg-header px-3 py-1.5 text-sm font-medium text-header-foreground"
+          disabled={creating}
+          className="rounded-md bg-header px-3 py-1.5 text-sm font-medium text-header-foreground disabled:opacity-50"
         >
-          + New Project
+          {creating ? "Creating…" : "+ New Project"}
         </button>
       </div>
 

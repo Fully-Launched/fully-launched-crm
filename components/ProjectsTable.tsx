@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { isOverdue, type Project, type TeamMember } from "@/lib/types";
@@ -73,8 +74,10 @@ export default function ProjectsTable({
   fixedBranch: Branch | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const [sort, setSort] = useState<{ column: string; dir: SortDir } | null>(
     null
   );
@@ -125,7 +128,11 @@ export default function ProjectsTable({
     }
   }
 
+  // Creates a blank Leads project in this tab's branch and opens it, same
+  // as Duplicate — the user fills it in on the Manage Project page. The
+  // from/tab params bring Back to this Table tab.
   async function addRow() {
+    setCreating(true);
     const { data, error } = await supabase
       .from("projects")
       .insert({
@@ -133,15 +140,22 @@ export default function ProjectsTable({
         branch: fixedBranch,
         stage: "Leads",
       })
-      .select()
+      .select("id")
       .single();
 
     if (error || !data) {
+      setCreating(false);
       setError(error?.message ?? "Could not create project");
       return;
     }
-    setError(null);
-    setProjects((prev) => [data as Project, ...prev]);
+    router.push(
+      projectDetailHref(
+        data.id,
+        "table",
+        fixedBranch ? branchSlug(fixedBranch) : "all"
+      )
+    );
+    router.refresh();
   }
 
   const columns: Column[] = useMemo(
@@ -473,9 +487,10 @@ export default function ProjectsTable({
         <button
           type="button"
           onClick={addRow}
-          className="rounded-md bg-header px-3 py-1.5 text-sm font-medium text-header-foreground"
+          disabled={creating}
+          className="rounded-md bg-header px-3 py-1.5 text-sm font-medium text-header-foreground disabled:opacity-50"
         >
-          + New Project
+          {creating ? "Creating…" : "+ New Project"}
         </button>
       </div>
 
