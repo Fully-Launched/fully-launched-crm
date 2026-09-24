@@ -21,17 +21,46 @@ export function branchCounts(projects: Project[]): Record<Branch, number> {
   return counts;
 }
 
-export function valueByStage(projects: Project[]): Record<Stage, number> {
-  const totals = Object.fromEntries(STAGES.map((s) => [s, 0])) as Record<
-    Stage,
-    number
-  >;
-  for (const p of projects) totals[p.stage] += p.value ?? 0;
+export type StageValue = { build: number; mrr: number };
+
+// Per stage: build_value summed over Build-on projects, subscription_value
+// ($/mo) over Subscription-on projects — same rules as the two stat tiles.
+export function valueByStage(
+  projects: Project[]
+): Record<Stage, StageValue> {
+  const totals = Object.fromEntries(
+    STAGES.map((s) => [s, { build: 0, mrr: 0 }])
+  ) as Record<Stage, StageValue>;
+  for (const p of projects) {
+    if (p.build) totals[p.stage].build += p.build_value ?? 0;
+    if (p.subscription) totals[p.stage].mrr += p.subscription_value ?? 0;
+  }
   return totals;
 }
 
-export function totalPipelineValue(projects: Project[]): number {
-  return projects.reduce((sum, p) => sum + (p.value ?? 0), 0);
+// Sum of build_value over projects with Build on (any stage).
+export function buildPipeline(projects: Project[]): {
+  total: number;
+  count: number;
+} {
+  const builds = projects.filter((p) => p.build);
+  return {
+    total: builds.reduce((sum, p) => sum + (p.build_value ?? 0), 0),
+    count: builds.length,
+  };
+}
+
+// Sum of subscription_value ($/mo) over projects with Subscription on (any
+// stage).
+export function subscriptionMrr(projects: Project[]): {
+  total: number;
+  count: number;
+} {
+  const subs = projects.filter((p) => p.subscription);
+  return {
+    total: subs.reduce((sum, p) => sum + (p.subscription_value ?? 0), 0),
+    count: subs.length,
+  };
 }
 
 export function overdueCount(projects: Project[]): number {

@@ -59,7 +59,7 @@ Live tables: `projects`, `team_members`, `project_tasks`, `transactions`, `leads
 | owner | multi-select (`uuid[]`) from team_members |
 | salesperson | multi-select (`uuid[]`) from team_members — same pattern as owner |
 | source | single-select: Cold Call / Email / LinkedIn / Instagram / Facebook / Website / Referral / Relationship / Inbound (Relationship added in migration 004, Inbound in 009) |
-| value | $ |
+| value | $ — **legacy, not shown or edited anywhere in the UI.** Column kept in the DB (not dropped). Money is `build_value` (one-time) and `subscription_value` ($/mo): Table has Build Value / Sub Value columns (editable only when their toggle is on), Kanban cards show whichever apply, and the Dashboard shows Build Pipeline + Subscription MRR tiles and a Build/MRR-by-stage card — all counting every stage, Lost and Complete included |
 | target_date | date |
 | end_date | date — general project end date (replaces dropped next_step/last_step fields) |
 | build | boolean, default false |

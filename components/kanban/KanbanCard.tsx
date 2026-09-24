@@ -23,6 +23,15 @@ function CardBody({
   showBranch: boolean;
 }) {
   const overdue = isOverdue(project);
+  // Build and/or Subscription amounts, whichever toggles are on.
+  const amounts = [
+    project.build && project.build_value != null
+      ? currencyFormat.format(project.build_value)
+      : null,
+    project.subscription && project.subscription_value != null
+      ? `${currencyFormat.format(project.subscription_value)}/mo`
+      : null,
+  ].filter(Boolean);
   return (
     <>
       <p className="font-semibold text-foreground">
@@ -49,7 +58,7 @@ function CardBody({
 
       <div className="mt-2 flex items-center justify-between text-xs">
         <span className="text-neutral-700">
-          {project.value != null ? currencyFormat.format(project.value) : "—"}
+          {amounts.length ? amounts.join(" · ") : "—"}
         </span>
         {project.target_date && (
           <span

@@ -3,10 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import type { Lead, Project } from "@/lib/types";
 import {
   branchCounts,
+  buildPipeline,
   overdueCount,
   recentLeads,
   stageCounts,
-  totalPipelineValue,
+  subscriptionMrr,
   upcomingCalls,
   valueByStage,
 } from "@/lib/dashboard";
@@ -34,6 +35,8 @@ export default async function DashboardPage() {
     supabase.from("leads").select("*").order("created_at", { ascending: false }),
   ]);
   const projects = (projectsData ?? []) as Project[];
+  const pipeline = buildPipeline(projects);
+  const mrr = subscriptionMrr(projects);
   const leads = (leadsData ?? []) as Lead[];
 
   async function signOut() {
@@ -64,9 +67,14 @@ export default async function DashboardPage() {
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
-          label="Total Pipeline Value"
-          value={currencyFormat.format(totalPipelineValue(projects))}
-          sublabel={`${projects.length} project${projects.length === 1 ? "" : "s"}`}
+          label="Build Pipeline"
+          value={currencyFormat.format(pipeline.total)}
+          sublabel={`${pipeline.count} build project${pipeline.count === 1 ? "" : "s"}`}
+        />
+        <StatTile
+          label="Subscription MRR"
+          value={`${currencyFormat.format(mrr.total)}/mo`}
+          sublabel={`${mrr.count} subscription${mrr.count === 1 ? "" : "s"}`}
         />
         <StatTile
           label="Overdue"

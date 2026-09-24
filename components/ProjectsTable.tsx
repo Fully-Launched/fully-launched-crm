@@ -92,7 +92,8 @@ export default function ProjectsTable({
     owner: [],
     salesperson: [],
     source: [],
-    value: "",
+    buildValue: "",
+    subscriptionValue: "",
     endDate: "",
     targetDate: "",
     notes: "",
@@ -329,24 +330,6 @@ export default function ProjectsTable({
         ),
       },
       {
-        id: "value",
-        label: "Value",
-        filter: { type: "text" },
-        getSortValue: (p) => p.value ?? -1,
-        matchesFilter: (p, v) =>
-          textMatch(p.value != null ? String(p.value) : null, v),
-        render: (p) => (
-          <TextCell
-            type="number"
-            value={p.value != null ? String(p.value) : null}
-            displayValue={p.value != null ? currencyFormat.format(p.value) : undefined}
-            onCommit={(v) =>
-              updateProject(p.id, { value: v === "" ? null : Number(v) })
-            }
-          />
-        ),
-      },
-      {
         id: "targetDate",
         label: "Target Date",
         filter: { type: "text" },
@@ -400,6 +383,30 @@ export default function ProjectsTable({
         ),
       },
       {
+        // Editable only while Build is on, same as the Manage Project page.
+        id: "buildValue",
+        label: "Build Value",
+        filter: { type: "text" },
+        getSortValue: (p) => (p.build ? p.build_value ?? -1 : -1),
+        matchesFilter: (p, v) =>
+          textMatch(p.build && p.build_value != null ? String(p.build_value) : null, v),
+        render: (p) =>
+          p.build ? (
+            <TextCell
+              type="number"
+              value={p.build_value != null ? String(p.build_value) : null}
+              displayValue={
+                p.build_value != null ? currencyFormat.format(p.build_value) : undefined
+              }
+              onCommit={(v) =>
+                updateProject(p.id, { build_value: v === "" ? null : Number(v) })
+              }
+            />
+          ) : (
+            <span className="px-1.5 text-sm text-neutral-400">—</span>
+          ),
+      },
+      {
         id: "subscription",
         label: "Subscription",
         getSortValue: (p) => (p.subscription ? 1 : 0),
@@ -414,6 +421,40 @@ export default function ProjectsTable({
             className="ml-2 h-4 w-4"
           />
         ),
+      },
+      {
+        // Editable only while Subscription is on, same as the Manage Project page.
+        id: "subscriptionValue",
+        label: "Sub Value ($/mo)",
+        filter: { type: "text" },
+        getSortValue: (p) =>
+          p.subscription ? p.subscription_value ?? -1 : -1,
+        matchesFilter: (p, v) =>
+          textMatch(
+            p.subscription && p.subscription_value != null
+              ? String(p.subscription_value)
+              : null,
+            v
+          ),
+        render: (p) =>
+          p.subscription ? (
+            <TextCell
+              type="number"
+              value={p.subscription_value != null ? String(p.subscription_value) : null}
+              displayValue={
+                p.subscription_value != null
+                  ? `${currencyFormat.format(p.subscription_value)}/mo`
+                  : undefined
+              }
+              onCommit={(v) =>
+                updateProject(p.id, {
+                  subscription_value: v === "" ? null : Number(v),
+                })
+              }
+            />
+          ) : (
+            <span className="px-1.5 text-sm text-neutral-400">—</span>
+          ),
       },
       {
         id: "notes",

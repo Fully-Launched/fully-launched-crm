@@ -308,14 +308,6 @@ export default function ProjectDetail({
             onCommit={(channels) => update({ channels })}
           />
         </Field>
-        <Field label="Value">
-          <TextCell
-            type="number"
-            value={project.value != null ? String(project.value) : null}
-            displayValue={project.value != null ? currencyFormat.format(project.value) : undefined}
-            onCommit={(v) => update({ value: v === "" ? null : Number(v) })}
-          />
-        </Field>
         <Field label="Target Date">
           <DateCell value={project.target_date} onCommit={(v) => update({ target_date: v })} />
         </Field>
