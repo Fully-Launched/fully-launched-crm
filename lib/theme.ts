@@ -30,6 +30,17 @@ export const BRANCH_COLORS: Record<Branch, string> = {
   AI: "bg-branch-ai text-white border border-branch-ai",
 };
 
+// Kanban card borders (1px all round + a 4px left stripe, set by the card) in
+// the branch color. Border only, no fill: the solid branch colors are too dark
+// for card text, and Websites' navy is a CSS variable, which Tailwind v3
+// can't tint with an opacity modifier.
+export const BRANCH_CARD_BORDERS: Record<Branch, string> = {
+  Media: "border-branch-media",
+  Websites: "border-branch-websites",
+  Ecommerce: "border-branch-ecommerce",
+  AI: "border-branch-ai",
+};
+
 // Chart fills (recharts can't consume Tailwind classes). The branch chart
 // always pairs these with a text label, never color alone.
 export const BRANCH_CHART_COLORS: Record<Branch, string> = BRANCH_FILL;

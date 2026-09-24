@@ -5,7 +5,6 @@ import {
   branchValue,
   type BranchSlug,
 } from "@/lib/branches";
-import { BRANCH_COLORS, type Branch } from "@/lib/theme";
 import type { Project, TeamMember } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import ProjectsTable from "@/components/ProjectsTable";
@@ -49,13 +48,6 @@ export default async function ProjectsPage({
     <div className="p-8">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold text-foreground">{label}</h1>
-        {branch && (
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${BRANCH_COLORS[branch as Branch]}`}
-          >
-            {branch}
-          </span>
-        )}
         <div className="ml-auto">
           <ViewToggle tab={slug} current={view} />
         </div>

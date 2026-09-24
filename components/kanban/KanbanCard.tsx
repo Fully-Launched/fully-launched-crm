@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useDraggable } from "@dnd-kit/core";
-import { BRANCH_COLORS } from "@/lib/theme";
+import { BRANCH_CARD_BORDERS, BRANCH_COLORS } from "@/lib/theme";
 import { isOverdue, type Project } from "@/lib/types";
 
 const currencyFormat = new Intl.NumberFormat("en-US", {
@@ -34,18 +34,21 @@ function CardBody({
   ].filter(Boolean);
   return (
     <>
-      <p className="font-semibold text-foreground">
-        {project.client_name}
-      </p>
-
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      {/* Branch badge sits in the top-right corner, beside the name. */}
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 break-words font-semibold text-foreground">
+          {project.client_name}
+        </p>
         {showBranch && project.branch && (
           <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${BRANCH_COLORS[project.branch]}`}
+            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${BRANCH_COLORS[project.branch]}`}
           >
             {project.branch}
           </span>
         )}
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {owners.map((o) => (
           <span
             key={o.id}
@@ -75,7 +78,14 @@ function CardBody({
 }
 
 const CARD_CLASS =
-  "relative rounded-lg border border-neutral-200 bg-background p-3 text-sm shadow-sm";
+  "relative rounded-lg border border-l-4 bg-background p-3 text-sm shadow-sm";
+
+// Branch-colored border; neutral for projects with no branch.
+function cardBorder(project: Project): string {
+  return project.branch
+    ? BRANCH_CARD_BORDERS[project.branch]
+    : "border-neutral-200";
+}
 
 export default function KanbanCard({
   project,
@@ -100,7 +110,7 @@ export default function KanbanCard({
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`${CARD_CLASS} cursor-grab touch-none hover:border-neutral-300 ${
+      className={`${CARD_CLASS} ${cardBorder(project)} cursor-grab touch-none transition-shadow hover:shadow-md ${
         isDragging ? "opacity-40" : ""
       }`}
     >
@@ -132,7 +142,7 @@ export function KanbanCardPreview({
   showBranch: boolean;
 }) {
   return (
-    <div className={`${CARD_CLASS} cursor-grabbing shadow-lg`}>
+    <div className={`${CARD_CLASS} ${cardBorder(project)} cursor-grabbing shadow-lg`}>
       <CardBody project={project} owners={owners} showBranch={showBranch} />
     </div>
   );
