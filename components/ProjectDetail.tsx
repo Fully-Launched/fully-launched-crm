@@ -25,6 +25,8 @@ import ProjectTasksManager from "@/components/ProjectTasksManager";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ChannelsField from "@/components/ChannelsField";
 import BookCallSection from "@/components/BookCallSection";
+import CallHistory from "@/components/CallHistory";
+import type { Call } from "@/lib/calls";
 import { branchChangePatch } from "@/lib/channels";
 import {
   INVOICE_DAYS_UNTIL_DUE,
@@ -77,6 +79,7 @@ export default function ProjectDetail({
   canInvoice,
   stripeDashboardBase,
   currentMemberId,
+  calls,
 }: {
   initialProject: Project;
   teamMembers: TeamMember[];
@@ -89,6 +92,8 @@ export default function ProjectDetail({
   stripeDashboardBase: string | null;
   // Sent as metadata[booked_by] on Cal.com links.
   currentMemberId: string | null;
+  // Cal.com calls linked to this project.
+  calls: Call[];
 }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
@@ -496,6 +501,10 @@ export default function ProjectDetail({
           teamMembers={teamMembers}
           currentMemberId={currentMemberId}
         />
+      </div>
+
+      <div className="mt-6">
+        <CallHistory calls={calls} teamMembers={teamMembers} />
       </div>
 
       <div className="mt-6">

@@ -8,7 +8,9 @@ import {
   recentLeads,
   stageCounts,
   subscriptionMrr,
+  unmatchedCalls,
   upcomingCalls,
+  type CallWithLinks,
   valueByStage,
 } from "@/lib/dashboard";
 import StatTile from "@/components/dashboard/StatTile";
@@ -16,6 +18,7 @@ import StageChart from "@/components/dashboard/StageChart";
 import BranchChart from "@/components/dashboard/BranchChart";
 import ValueByStageCard from "@/components/dashboard/ValueByStageCard";
 import UpcomingCallsCard from "@/components/dashboard/UpcomingCallsCard";
+import UnmatchedCallsCard from "@/components/dashboard/UnmatchedCallsCard";
 import RecentLeadsCard from "@/components/dashboard/RecentLeadsCard";
 
 const currencyFormat = new Intl.NumberFormat("en-US", {
@@ -30,11 +33,22 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: projectsData }, { data: leadsData }] = await Promise.all([
+  const [
+    { data: projectsData },
+    { data: leadsData },
+    { data: callsData },
+    { data: membersData },
+  ] = await Promise.all([
     supabase.from("projects").select("*"),
     supabase.from("leads").select("*").order("created_at", { ascending: false }),
+    supabase.from("calls").select("*, call_projects(project_id)"),
+    supabase.from("team_members").select("id, name"),
   ]);
   const projects = (projectsData ?? []) as Project[];
+  const calls = (callsData ?? []) as CallWithLinks[];
+  const names = new Map(
+    (membersData ?? []).map((m) => [m.id as string, m.name as string])
+  );
   const pipeline = buildPipeline(projects);
   const mrr = subscriptionMrr(projects);
   const leads = (leadsData ?? []) as Lead[];
@@ -91,8 +105,19 @@ export default async function DashboardPage() {
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <ValueByStageCard totals={valueByStage(projects)} />
-        <UpcomingCallsCard calls={upcomingCalls(projects)} />
+        <UpcomingCallsCard calls={upcomingCalls(calls, projects, names)} />
         <RecentLeadsCard leads={recentLeads(leads)} />
+      </div>
+
+      <div className="mt-6">
+        <UnmatchedCallsCard
+          calls={unmatchedCalls(calls, names)}
+          projects={projects.map((p) => ({
+            id: p.id,
+            client_name: p.client_name,
+            branch: p.branch,
+          }))}
+        />
       </div>
     </div>
   );

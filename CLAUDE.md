@@ -197,12 +197,14 @@ Cal.com over Calendly. No team/paid tier — each team member uses their own fre
 - `team_members.booking_link` (text, migration 002) holds one Cal.com URL per person. **Admin-only edits** on the Team page (TeamManager "Booking link" column; RLS from migration 005). Non-Admins see a read-only directory with each link (open + copy).
 - **Book a call** section on the Manage Project page (`components/BookCallSection.tsx`): everyone with a link, the project's Owners first. Links are pre-filled by `bookingUrl()` (`lib/booking.ts`): `name`, `email` (the project's contact), `metadata[project_id]`, `metadata[booked_by]` (current team member).
 
-### Stage 2 — call history (migration 012; webhook not built yet)
+### Stage 2 — call history (built, migration 012)
 
 - `calls` (one row per Cal.com booking, unique `cal_uid`; status booked / cancelled / rescheduled; `matched_by` metadata / email / manual / none) and `call_projects` (many-to-many — a call links to **every** matching project, e.g. Hesedea ×3). Read-only to the app; written by the webhook with the service role. `assign_call_to_project()` (security definer) links an unmatched call from the Dashboard.
-- Webhook `/api/webhooks/calcom` (under `/api/webhooks/`, so exempt from the auth middleware; must verify `X-Cal-Signature-256`, HMAC-SHA256 of the raw body with one shared `CALCOM_WEBHOOK_SECRET` across everyone's webhooks). Events: BOOKING_CREATED, BOOKING_RESCHEDULED, BOOKING_CANCELLED.
+- Webhook `app/api/webhooks/calcom/route.ts` (under `/api/webhooks/`, so exempt from the auth middleware). Verifies `X-Cal-Signature-256` (hex HMAC-SHA256 of the raw body, `lib/calcom.ts`) with one shared `CALCOM_WEBHOOK_SECRET` set on everyone's Cal.com webhook, before reading anything. Events: BOOKING_CREATED (upsert on `cal_uid`), BOOKING_RESCHEDULED (new booking recorded; old one → `rescheduled` + `rescheduled_to_uid`, its project links carried over), BOOKING_CANCELLED (`cancelled`, kept). A re-delivered CREATED never un-cancels. Project links are only ever added, so manual assignments survive. PING / unknown events → 200. Handler errors → 500 so Cal.com retries. Needs `SUPABASE_SERVICE_ROLE_KEY` + `CALCOM_WEBHOOK_SECRET`.
+- **Payload field names** (`uid`, `startTime`, `organizer.email`, `attendees[]`, `metadata`, `rescheduleUid` / `fromReschedule`) follow Cal.com's docs but weren't verified against a live delivery when built — check the first real booking.
 - Matching: `metadata.project_id` first (**confirm with a real test booking that metadata reaches the webhook before relying on it**), else attendee email vs `projects.email` (trimmed, case-insensitive) across projects in **every** stage; no match → stored unlinked and shown on the Dashboard's "Unmatched calls" card. Organizer matched to `team_members.email`.
-- Shown: a Calls section on the project page (upcoming first, then past; "Completed" = booked + past); cancelled/rescheduled stay in history. Dashboard "Upcoming Calls" reads from `calls`; `projects.scheduled_call` stays in the schema, unused.
+- Shown: **Calls** section on the Manage Project page (`components/CallHistory.tsx`: when / with / team member (+ booked by) / status — Upcoming, Completed (= booked + past, `lib/calls.ts`), Cancelled, Rescheduled; upcoming first, then past). Dashboard: "Upcoming Scheduled Calls" (booked, next 7 days) reads from `calls`; **"Unmatched Calls"** card lists booked calls with no project link, each with a project picker + "Assign to project" (`assign_call_to_project()`). `projects.scheduled_call` stays in the schema, unused.
+- Call times render in the viewer's timezone via `components/LocalDateTime.tsx` (client-side; server rendering would use UTC).
 
 ## Stripe
 
@@ -239,5 +241,5 @@ API keys server-side only, from env vars, never hardcoded. Start in **test mode*
 
 1. ~~"+ Add Team Member" screen (three-role picker)~~ — done, shipped in 247e927
 2. Load real client data — get Luke's actual client list first, don't invent sample data (all tables are currently empty)
-3. Cal.com: apply migration 012, build stage 2 (webhook + call history), set up each person's Cal.com webhook, test booking
+3. Cal.com: set `CALCOM_WEBHOOK_SECRET` on Vercel, set up each person's Cal.com webhook + booking link, then a real test booking to confirm metadata/payload fields
 4. Stripe: set env vars + webhook endpoint (test mode) and test Deposit/Build invoices end to end; then Piece 2 (subscriptions)

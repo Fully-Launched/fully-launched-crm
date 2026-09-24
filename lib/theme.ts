@@ -96,6 +96,18 @@ export const STAGE_CHART_COLORS: Record<Stage, string> = {
   Lost: "#ef4444",
 };
 
+// Call status badges (lib/calls.ts callDisplayStatus), same pastel pattern as
+// the stage badges.
+export const CALL_STATUS_COLORS: Record<
+  "Upcoming" | "Completed" | "Cancelled" | "Rescheduled",
+  string
+> = {
+  Upcoming: "bg-indigo-50 text-indigo-700 border border-indigo-200",
+  Completed: "bg-green-50 text-green-700 border border-green-200",
+  Cancelled: "bg-red-50 text-red-700 border border-red-200",
+  Rescheduled: "bg-amber-50 text-amber-700 border border-amber-200",
+};
+
 // Stages that no longer count as "active" for overdue-date highlighting.
 export const CLOSED_STAGES: Stage[] = ["Complete", "Subscriber", "Lost"];
 

@@ -6,6 +6,7 @@ import { projectOrigin } from "@/lib/projects";
 import { getCurrentTeamMember } from "@/lib/auth";
 import { canSendInvoices } from "@/lib/billing";
 import { stripeDashboardBase } from "@/lib/stripe";
+import type { Call } from "@/lib/calls";
 
 export default async function ProjectDetailPage({
   params,
@@ -21,6 +22,7 @@ export default async function ProjectDetailPage({
     { data: teamMembers },
     { data: tasks },
     currentMember,
+    { data: callLinks },
   ] = await Promise.all([
     supabase.from("projects").select("*").eq("id", params.id).maybeSingle(),
     supabase.from("team_members").select("*").order("name"),
@@ -30,7 +32,12 @@ export default async function ProjectDetailPage({
       .eq("project_id", params.id)
       .order("due_date", { ascending: true, nullsFirst: false }),
     getCurrentTeamMember(),
+    // Cal.com calls linked to this project (migration 012).
+    supabase.from("call_projects").select("call:calls(*)").eq("project_id", params.id),
   ]);
+  const calls = ((callLinks ?? []) as unknown as { call: Call | null }[])
+    .map((l) => l.call)
+    .filter((c): c is Call => c !== null);
 
   if (!project) {
     notFound();
@@ -51,6 +58,7 @@ export default async function ProjectDetailPage({
         canInvoice={canSendInvoices(currentMember?.role)}
         stripeDashboardBase={stripeDashboardBase()}
         currentMemberId={currentMember?.id ?? null}
+        calls={calls}
       />
     </div>
   );

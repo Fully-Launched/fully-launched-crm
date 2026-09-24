@@ -1,5 +1,8 @@
 import { BRANCHES, STAGES, type Branch, type Stage } from "@/lib/theme";
 import { isOverdue, type Lead, type Project } from "@/lib/types";
+import type { Call } from "@/lib/calls";
+import type { UpcomingCall } from "@/components/dashboard/UpcomingCallsCard";
+import type { UnmatchedCall } from "@/components/dashboard/UnmatchedCallsCard";
 
 export function stageCounts(projects: Project[]): Record<Stage, number> {
   const counts = Object.fromEntries(STAGES.map((s) => [s, 0])) as Record<
@@ -67,20 +70,53 @@ export function overdueCount(projects: Project[]): number {
   return projects.filter(isOverdue).length;
 }
 
-export function upcomingCalls(projects: Project[]): Project[] {
-  const now = new Date();
-  const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  return projects
-    .filter((p) => {
-      if (!p.scheduled_call) return false;
-      const call = new Date(p.scheduled_call);
-      return call >= now && call <= in7Days;
+// A calls row with its project links (call_projects), as the Dashboard
+// loads it.
+export type CallWithLinks = Call & { call_projects: { project_id: string }[] | null };
+
+// Booked Cal.com calls starting in the next 7 days, soonest first, with their
+// linked projects. Reads the calls table — projects.scheduled_call is no
+// longer used.
+export function upcomingCalls(
+  calls: CallWithLinks[],
+  projects: Project[],
+  names: Map<string, string>,
+  now: number = Date.now()
+): UpcomingCall[] {
+  const byId = new Map(projects.map((p) => [p.id, p]));
+  const in7Days = now + 7 * 24 * 60 * 60 * 1000;
+  return calls
+    .filter((c) => {
+      const t = Date.parse(c.start_time);
+      return c.status === "booked" && t >= now && t <= in7Days;
     })
-    .sort(
-      (a, b) =>
-        new Date(a.scheduled_call!).getTime() -
-        new Date(b.scheduled_call!).getTime()
-    );
+    .sort((a, b) => a.start_time.localeCompare(b.start_time))
+    .map(({ call_projects, ...c }) => ({
+      ...c,
+      hostName: c.team_member_id ? names.get(c.team_member_id) ?? null : null,
+      projects: (call_projects ?? []).flatMap((l) => {
+        const p = byId.get(l.project_id);
+        return p ? [{ id: p.id, client_name: p.client_name, branch: p.branch }] : [];
+      }),
+    }));
+}
+
+// Booked calls with no linked project, newest first. Cancelled and
+// rescheduled-away bookings are left out (nothing to act on).
+export function unmatchedCalls(
+  calls: CallWithLinks[],
+  names: Map<string, string>,
+  limit = 20
+): UnmatchedCall[] {
+  return calls
+    .filter((c) => c.status === "booked" && (c.call_projects ?? []).length === 0)
+    .sort((a, b) => b.start_time.localeCompare(a.start_time))
+    .slice(0, limit)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    .map(({ call_projects, ...c }) => ({
+      ...c,
+      hostName: c.team_member_id ? names.get(c.team_member_id) ?? null : null,
+    }));
 }
 
 export function recentLeads(leads: Lead[], limit = 8): Lead[] {
