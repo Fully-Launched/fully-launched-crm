@@ -18,12 +18,15 @@
 ## Branding
 
 - Brand palette lives in one theme config file (`lib/theme.ts`), single swap point — never hardcode colors in components
-- Branch badge colors are fixed regardless of brand palette (functional, not brand):
-  - Media — blue
-  - Websites — yellow
-  - Ecommerce — red
-  - AI — green
-- Stage badge colors (`STAGE_COLORS` in `lib/theme.ts`): Leads gray, Interested fuchsia, Signed indigo, In Progress amber, Complete green, Subscriber teal, Lost red. Lost/Ecommerce (red) and Complete/AI (green) share hues on purpose — not worth separating.
+- Brand accent is navy `#1B2B4B` (`--color-accent` in `app/globals.css`, replaced `#2563eb`). Any navy use references that variable, not the hex.
+- Branch badges are **solid fills**, fixed regardless of brand palette. Values live once in `BRANCH_FILL` (`lib/theme.ts`); `tailwind.config.ts` imports it as `branch-*` colors, and the dashboard chart uses it directly:
+  - Media — gold `#B8962E`, **navy text** (`text-accent`; white on this gold is 2.82:1 and fails AA)
+  - Websites — brand navy (`var(--color-accent)`)
+  - Ecommerce — dark green `#1B4B3A`
+  - AI — maroon `#7A1F2A`
+  - White text on Websites/Ecommerce/AI.
+- Stage badges are **pastel** (`STAGE_COLORS`: `-50` tint, `-700` text, `-200` border, all ≥ 4.5:1): Leads gray, Interested fuchsia, Signed indigo, In Progress amber, Complete green, Subscriber teal, Lost red. The stage *chart* keeps stronger `-500`-ish fills (`STAGE_CHART_COLORS`).
+- `tailwind.config.ts` `content` must include `./lib/**` — all badge/pill class strings live in `lib/theme.ts`, and before this was added none of them were generated (badges rendered uncolored).
 - Owner/Salesperson pill colors are per person (`memberColors()` in `lib/team.ts`, palettes in `lib/theme.ts`): `PINNED_MEMBER_COLORS` fixes a color by email; everyone else rotates through `MEMBER_COLOR_ROTATION` (purple, orange, emerald, pink, cyan, lime) in `team_members` (`created_at`, `id`) order, so new members get a color with no code change. Adding a member never changes existing colors; removing one shifts the colors of members added after them. Unknown ids render gray.
 - **Deliberate exception to "never hardcode team member names":** Luke is pinned to blue by his email (`luke@fullylaunched.com`) in `PINNED_MEMBER_COLORS`. It's keyed on email, not name, so a rename doesn't break it; if his login email changes, update it there. If more per-person colors are wanted, move this to a `team_members.color` column instead of adding emails.
 

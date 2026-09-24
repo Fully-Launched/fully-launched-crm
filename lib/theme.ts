@@ -8,23 +8,31 @@ export type Branch = "Media" | "Websites" | "Ecommerce" | "AI";
 // 008, which renamed Marketplace -> Ecommerce).
 export const BRANCHES: Branch[] = ["Media", "Websites", "Ecommerce", "AI"];
 
-export const BRANCH_COLORS: Record<Branch, string> = {
-  Media: "bg-blue-100 text-blue-800 border border-blue-300",
-  Websites: "bg-yellow-100 text-yellow-800 border border-yellow-300",
-  Ecommerce: "bg-red-100 text-red-800 border border-red-300",
-  AI: "bg-green-100 text-green-800 border border-green-300",
+// Branch palette: solid fills, visually distinct from the pastel stage
+// badges. The single source for these values — tailwind.config.ts registers
+// them as `branch-*` colors (used below), and the dashboard chart reads them
+// directly. Websites is the brand navy, so it points at the shared
+// --color-accent (app/globals.css) rather than repeating the hex.
+export const BRANCH_FILL: Record<Branch, string> = {
+  Media: "#B8962E", // gold
+  Websites: "var(--color-accent)", // brand navy #1B2B4B
+  Ecommerce: "#1B4B3A", // dark green
+  AI: "#7A1F2A", // maroon
 };
 
-// Hex equivalents of BRANCH_COLORS for chart fills (recharts can't consume
-// Tailwind classes). Same fixed hues, just a different format. Red/AI-green
-// stay close for deuteranopia at any shade — the branch chart always pairs
-// these with a direct text label, never color alone.
-export const BRANCH_CHART_COLORS: Record<Branch, string> = {
-  Media: "#2563eb",
-  Websites: "#ca8a04",
-  Ecommerce: "#dc2626",
-  AI: "#16a34a",
+// White text on each fill, except Media: white on gold is 2.82:1 (fails
+// WCAG AA), brand-navy text is 4.98:1. Border matches the fill so filled and
+// pastel badges are the same size.
+export const BRANCH_COLORS: Record<Branch, string> = {
+  Media: "bg-branch-media text-accent border border-branch-media",
+  Websites: "bg-branch-websites text-white border border-branch-websites",
+  Ecommerce: "bg-branch-ecommerce text-white border border-branch-ecommerce",
+  AI: "bg-branch-ai text-white border border-branch-ai",
 };
+
+// Chart fills (recharts can't consume Tailwind classes). The branch chart
+// always pairs these with a text label, never color alone.
+export const BRANCH_CHART_COLORS: Record<Branch, string> = BRANCH_FILL;
 
 export type Stage =
   | "Leads"
@@ -50,17 +58,17 @@ export const STAGES: Stage[] = [
 ];
 
 // Stage badge colors: Leads gray, Interested fuchsia, Signed indigo, In
-// Progress amber, Complete green, Subscriber teal, Lost red. Interested
-// avoids blue (Media branch, pinned owner). Lost/Ecommerce (red) and
-// Complete/AI (green) overlap by choice.
+// Progress amber, Complete green, Subscriber teal, Lost red.
+// Pastel: -50 tint, -700 text, -200 border. Every pair is >= 4.5:1 (WCAG AA
+// for the badges' 12px text); the tightest is Complete at 4.79:1.
 export const STAGE_COLORS: Record<Stage, string> = {
-  Leads: "bg-neutral-100 text-neutral-700 border border-neutral-300",
-  Interested: "bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-300",
-  Signed: "bg-indigo-100 text-indigo-800 border border-indigo-300",
-  "In Progress": "bg-amber-100 text-amber-800 border border-amber-300",
-  Complete: "bg-green-100 text-green-800 border border-green-300",
-  Subscriber: "bg-teal-100 text-teal-800 border border-teal-300",
-  Lost: "bg-red-100 text-red-800 border border-red-300",
+  Leads: "bg-neutral-50 text-neutral-700 border border-neutral-200",
+  Interested: "bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200",
+  Signed: "bg-indigo-50 text-indigo-700 border border-indigo-200",
+  "In Progress": "bg-amber-50 text-amber-700 border border-amber-200",
+  Complete: "bg-green-50 text-green-700 border border-green-200",
+  Subscriber: "bg-teal-50 text-teal-700 border border-teal-200",
+  Lost: "bg-red-50 text-red-700 border border-red-200",
 };
 
 // Hex equivalents of STAGE_COLORS for chart fills. Same hue family as the

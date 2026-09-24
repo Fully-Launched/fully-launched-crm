@@ -3,9 +3,10 @@
 @tailwind utilities;
 
 /*
- * Brand theme — placeholder neutral palette.
- * Swap these values (only) once real brand colors are provided.
- * Category badge colors are functional, not brand-driven — see lib/theme.ts.
+ * Brand theme. Swap these values (only) to rebrand.
+ * Branch/stage badge colors are functional, not brand-driven — see
+ * lib/theme.ts. Exception: the Websites branch badge, the Media badge's text,
+ * and the dashboard branch chart use --color-accent (brand navy) directly.
  */
 :root {
   --color-background: #ffffff;
@@ -14,7 +15,7 @@
   --color-header-bg: #171717;
   --color-header-fg: #ffffff;
 
-  --color-accent: #2563eb;
+  --color-accent: #1B2B4B; /* brand navy */
   --color-accent-fg: #ffffff;
 }
 
