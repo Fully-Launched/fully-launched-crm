@@ -51,7 +51,7 @@ Live tables: `projects`, `team_members`, `project_tasks`, `transactions`, `leads
 | lost_reason | text, optional — shown only when stage = Lost |
 | owner | multi-select (`uuid[]`) from team_members |
 | salesperson | multi-select (`uuid[]`) from team_members — same pattern as owner |
-| source | single-select: Cold Call / Email / LinkedIn / Instagram / Facebook / Website / Referral / Relationship (added in migration 004) |
+| source | single-select: Cold Call / Email / LinkedIn / Instagram / Facebook / Website / Referral / Relationship / Inbound (Relationship added in migration 004, Inbound in 009) |
 | value | $ |
 | target_date | date |
 | end_date | date — general project end date (replaces dropped next_step/last_step fields) |
