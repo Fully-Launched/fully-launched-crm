@@ -3,41 +3,72 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BRANCH_SLUGS, branchLabel } from "@/lib/branches";
+import { BRANCH_SLUGS, branchLabel, type BranchSlug } from "@/lib/branches";
+
+// Nav-only labels; routes, branch values, and page headings are unchanged
+// (e.g. /projects/ai still says "AI").
+const SUB_TAB_LABELS: Partial<Record<BranchSlug, string>> = {
+  ecommerce: "Ecomm",
+  ai: "AI Integration",
+};
+
+const PROJECTS_HREF = "/projects/all";
 
 export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [projectsExpanded, setProjectsExpanded] = useState(false);
+
+  // Branch list pages — these get the sub-tab row.
+  const onProjects = pathname.startsWith("/projects/");
+  // "Projects" stays highlighted on a single project's page too.
+  const projectsActive = onProjects || pathname.startsWith("/project/");
 
   // Transactions and Team are Admin-only (hidden here; their pages redirect
   // non-Admins, and RLS is the real gate).
   const tabs = [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Leads", href: "/leads" },
-    ...BRANCH_SLUGS.map((slug) => ({
-      // Nav-only label; the branch value and page heading stay "AI".
-      label: slug === "ai" ? "AI Integration" : branchLabel(slug),
-      href: `/projects/${slug}`,
-    })),
+    { label: "Projects", href: PROJECTS_HREF },
     ...(isAdmin ? [{ label: "Transactions", href: "/transactions" }] : []),
     { label: "Contacts", href: "/contacts" },
     ...(isAdmin ? [{ label: "Team", href: "/team" }] : []),
   ];
 
+  const subTabs = BRANCH_SLUGS.map((slug) => ({
+    label: SUB_TAB_LABELS[slug] ?? branchLabel(slug),
+    href: `/projects/${slug}`,
+  }));
+
+  // Top-level tabs. "Projects" covers every /projects/* branch page and
+  // /project/[id].
   function isActive(href: string) {
-    return href === "/dashboard"
-      ? pathname === "/dashboard"
-      : pathname.startsWith(href);
+    if (href === PROJECTS_HREF) return projectsActive;
+    return pathname === href || pathname.startsWith(`${href}/`);
   }
 
+  // Sub-tabs match exactly — "All" shares /projects/all with the Projects
+  // tab, so isActive() would light it up on every branch page.
+  function isSubActive(href: string) {
+    return pathname === href;
+  }
+
+  const activeSub = subTabs.find((t) => isSubActive(t.href));
   // No tab is active on e.g. /project/[id]; the mobile bar falls back to "Menu".
-  const activeLabel = tabs.find((t) => isActive(t.href))?.label ?? "Menu";
+  const activeLabel = activeSub
+    ? `Projects · ${activeSub.label}`
+    : tabs.find((t) => isActive(t.href))?.label ?? "Menu";
 
   // Close the mobile menu after navigating (incl. back/forward), and on
   // Escape. Links also close it on tap, which covers tapping the current tab.
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  // The mobile Projects group starts expanded when you're on a Projects page.
+  useEffect(() => {
+    if (menuOpen) setProjectsExpanded(onProjects);
+  }, [menuOpen, onProjects]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -48,9 +79,16 @@ export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [menuOpen]);
 
+  // Active indicators on the dark header are white (header-foreground): the
+  // navy accent is nearly invisible on it. The light sub-tab row keeps navy.
+  const mobileLinkClass = (active: boolean) =>
+    `block border-l-4 py-3 text-sm font-medium text-header-foreground ${
+      active ? "border-header-foreground opacity-100" : "border-transparent opacity-70"
+    }`;
+
   return (
     <nav className="relative z-30 bg-header">
-      {/* Desktop (sm and up): a row of tabs, wrapping if it runs out of room. */}
+      {/* Desktop (sm and up): top-level tabs, wrapping if they run out of room. */}
       <div className="mx-auto hidden max-w-6xl flex-wrap items-center gap-1 px-4 sm:flex">
         {tabs.map((tab) => (
           <Link
@@ -58,7 +96,7 @@ export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
             href={tab.href}
             className={`border-b-2 px-4 py-3 text-sm font-medium text-header-foreground transition-opacity ${
               isActive(tab.href)
-                ? "border-accent opacity-100"
+                ? "border-header-foreground opacity-100"
                 : "border-transparent opacity-70 hover:opacity-100"
             }`}
           >
@@ -66,6 +104,27 @@ export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
           </Link>
         ))}
       </div>
+
+      {/* Desktop Projects sub-tabs: a lighter second row, only on /projects/*. */}
+      {onProjects && (
+        <div className="hidden border-b border-neutral-200 bg-neutral-100 sm:block">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-1 px-4">
+            {subTabs.map((tab) => (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className={`border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+                  isSubActive(tab.href)
+                    ? "border-accent text-foreground"
+                    : "border-transparent text-neutral-500 hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Mobile (below sm): current tab + hamburger that opens a dropdown
           list over the page content. */}
@@ -112,20 +171,70 @@ export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
             id="mobile-nav-menu"
             className="absolute inset-x-0 top-full z-10 border-t border-white/10 bg-header pb-2 shadow-lg sm:hidden"
           >
-            {tabs.map((tab) => (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                onClick={() => setMenuOpen(false)}
-                className={`block border-l-4 px-4 py-3 text-sm font-medium text-header-foreground ${
-                  isActive(tab.href)
-                    ? "border-accent opacity-100"
-                    : "border-transparent opacity-70"
-                }`}
-              >
-                {tab.label}
-              </Link>
-            ))}
+            {tabs.map((tab) =>
+              tab.href === PROJECTS_HREF ? (
+                <div key={tab.href}>
+                  {/* Label goes to All; the chevron expands the sub-tabs. */}
+                  <div className="flex items-center">
+                    <Link
+                      href={tab.href}
+                      onClick={() => setMenuOpen(false)}
+                      className={`flex-1 px-4 ${mobileLinkClass(isActive(tab.href))}`}
+                    >
+                      {tab.label}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setProjectsExpanded((v) => !v)}
+                      aria-expanded={projectsExpanded}
+                      aria-controls="mobile-nav-projects"
+                      aria-label={
+                        projectsExpanded ? "Collapse Projects" : "Expand Projects"
+                      }
+                      className="mr-2 flex h-11 w-11 items-center justify-center text-header-foreground opacity-70"
+                    >
+                      <svg
+                        aria-hidden
+                        viewBox="0 0 24 24"
+                        className={`h-5 w-5 transition-transform ${
+                          projectsExpanded ? "rotate-180" : ""
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </button>
+                  </div>
+                  {projectsExpanded && (
+                    <div id="mobile-nav-projects">
+                      {subTabs.map((sub) => (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          onClick={() => setMenuOpen(false)}
+                          className={`pl-10 pr-4 ${mobileLinkClass(isSubActive(sub.href))}`}
+                        >
+                          {sub.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  onClick={() => setMenuOpen(false)}
+                  className={`px-4 ${mobileLinkClass(isActive(tab.href))}`}
+                >
+                  {tab.label}
+                </Link>
+              )
+            )}
           </div>
         </>
       )}
